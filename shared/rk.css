@@ -67,3 +67,6 @@ body.touch #joy-knob{transition:transform .04s linear}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* ---- new-version pill ---- */
+#rk-update{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);z-index:60;border:2px solid #fff6e4;border-radius:999px;padding:8px 18px;font:inherit;font-size:15px;color:#2a2140;background:linear-gradient(180deg,#ffe28a,#ffb92e);box-shadow:0 5px 0 #b5801c,0 10px 24px rgba(0,0,0,.4);cursor:pointer;animation:rkTitleIn .5s var(--rk-ease) both}

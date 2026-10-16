@@ -736,7 +736,10 @@ class Game extends Phaser.Scene {
       else for (const k of [2, 3, 4]) { const C = this.chapterInfo(k); if (s.stage === C.stages[0]) this.startChapter(k, Math.max(1, C.n - (this.chDown[k] | 0)), true); else if (s.stage === C.stages[1]) { this.chStarted[k] = true; this.spawnBoss(k); } }
     }
     this.updateHud(); this.updateSideHud(); this.refreshCombatHud(this.time.now);
-    this.toast('이어하기 · 챕터 ' + this.chapterOf(s.stage) + ' · Lv.' + this.lvl, 2600);
+    this.toast('이어하기 · 챕터 ' + this.chapterOf(this.stage) + ' · Lv.' + this.lvl, 2600);
+    // finished a chapter last time: the next one was just started silently, so announce it
+    const autoCh = { 5: 2, 8: 3, 11: 4 }[s.stage];
+    if (autoCh && this.stage === this.chapterInfo(autoCh).stages[0]) this.time.delayedCall(1800, () => { this.toast(this.chapterInfo(autoCh).start, 4200); if (window.RK) RK.ui.banner('CHAPTER ' + autoCh, ({ 2: '캣 패밀리의 아지트', 3: '스카이 크루의 습격', 4: '언더그라운드의 반격' })[autoCh]); });
   }
   refreshTitleButtons() {
     const s = this.readSave(), lb = $('btn-load'), sb = $('btn-start'); if (!lb || !sb) return;

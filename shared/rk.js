@@ -5,7 +5,8 @@ const LS = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
-const RK = window.RK = { sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
+const SELF = document.currentScript && document.currentScript.src;
+const RK = window.RK = { build: '20261016c', sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
 const emit = () => RK.listeners.forEach(f => { try { f(); } catch (e) {} });
 
 /* ---------------- audio: one shared context, an SFX bus and a music bus behind a master gain ---------------- */
@@ -91,6 +92,19 @@ RK.music = {
 document.addEventListener('visibilitychange', () => { if (!ctx) return; if (document.hidden) ctx.suspend(); else ctx.resume().then(() => { nextT = ctx.currentTime + .1; }); });
 ['pointerdown', 'keydown', 'touchstart'].forEach(ev => window.addEventListener(ev, () => RK.resume(), { passive: true }));
 window.addEventListener('keydown', e => { if (e.code === 'KeyM' && !e.repeat) RK.setSound(!RK.sound); });
+
+/* ---------------- new-version notice (tabs that stay open for a long time keep running the old files) ---------------- */
+RK.checkUpdate = async () => {
+  if (!SELF || RK._upd) return;
+  try {
+    const r = await fetch(new URL('../version.json', SELF).href + '?t=' + Date.now(), { cache: 'no-store' }); if (!r.ok) return;
+    const j = await r.json(); if (!j || !j.build || j.build === RK.build) return;
+    RK._upd = true; const b = document.createElement('button'); b.id = 'rk-update'; b.type = 'button'; b.textContent = '🔄 새 버전이 있어요 · 눌러서 업데이트';
+    b.addEventListener('click', () => location.reload()); (document.getElementById('stage') || document.body).appendChild(b);
+  } catch (e) {}
+};
+setTimeout(RK.checkUpdate, 4000); setInterval(RK.checkUpdate, 300000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden) RK.checkUpdate(); });
 
 /* ---------------- UI helpers ---------------- */
 const $ = id => document.getElementById(id);
