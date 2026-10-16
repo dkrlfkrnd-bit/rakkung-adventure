@@ -8,6 +8,7 @@ const W = 1280, H = 720;
 const FLOOR = 560;          // y of the far edge of the sidewalk art
 const STAND = 604;          // y where feet rest (top of the ground collision)
 const GRAV = 1900;
+const EAGLE_FUEL = 8;   // seconds of flight per eagle
 const TEST = /[?&]test=1/.test(location.search), DEBUG = /[?&]debug=1/.test(location.search);
 const $ = id => document.getElementById(id);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -595,6 +596,8 @@ class Play extends Phaser.Scene {
   }
 
   updateHero(dt, inp) {
+    // a tired eagle lands by itself once it is low and over solid ground
+    if (this.mount && this.mount.kind === 'eagle' && this.mount.tired && this.mount.sp.y >= STAND - 76 && this.S.ground.some(([a, e]) => this.mount.sp.x > a + 30 && this.mount.sp.x < e - 30)) this.dismount();
     const h = this.hero, m = this.mount, sp = m ? m.sp : h, b = sp.body;
     if (this.dead) return;
     this.invuln = Math.max(0, this.invuln - dt); this.atkCd = Math.max(0, this.atkCd - dt);
@@ -604,7 +607,11 @@ class Play extends Phaser.Scene {
     if (grounded && this.movers.length) { this.movers.forEach(mv => { const top = mv.z.y - 7; if (Math.abs(b.bottom - top) < 10 && b.right > mv.z.x - mv.e.n * 35 && b.left < mv.z.x + mv.e.n * 35 && mv.dx) sp.x += mv.dx; }); }
     if (inp.ax) sp.face = Math.sign(inp.ax); sp.face = sp.face || 1;
     if (flying) {
-      b.setVelocityX(approach(b.velocity.x, inp.ax * 330, 1600 * dt)); b.setVelocityY(approach(b.velocity.y, inp.ay * 280 + Math.sin(this.time.now / 220) * 14, 1400 * dt));
+      m.fuel -= dt; const fuelEl = $('mount-stamina');
+      if (fuelEl) { fuelEl.firstChild.style.width = Math.max(0, m.fuel / EAGLE_FUEL * 100) + '%'; fuelEl.classList.toggle('low', m.fuel < 2.5); }
+      if (m.fuel <= 0 && !m.tired) { m.tired = true; this.toast('독수리가 지쳤다! 땅에 내려가자', 1800); Sfx.hurt(); if (window.RK) RK.vibrate(30); }
+      b.setVelocityX(approach(b.velocity.x, inp.ax * 290, 1600 * dt));
+      b.setVelocityY(m.tired ? approach(b.velocity.y, 170, 900 * dt) : approach(b.velocity.y, inp.ay * 280 + Math.sin(this.time.now / 220) * 14, 1400 * dt));
       sp.y = clamp(sp.y, 215, STAND - 70); if ((sp.y >= STAND - 70 && b.velocity.y > 0) || (sp.y <= 215 && b.velocity.y < 0)) b.setVelocityY(0);
       sp.setFlipX(sp.face < 0); sp.setAngle(clamp(b.velocity.y / 14, -16, 16) * sp.face);
     } else {
@@ -661,7 +668,10 @@ class Play extends Phaser.Scene {
     if (this.atkCd > 0 || this.apples <= 0) { if (this.apples <= 0 && this.atkCd <= 0) { this.toast('사과가 없어!', 700); this.atkCd = .6; } return; }
     const sp = this.active, dir = sp.face || 1; this.apples--; this.atkCd = .32; this.hudApples();
     const a = this.physics.add.sprite(sp.x + dir * 40, sp.y - (this.mount ? 130 : 56), 'item_apple').setDisplaySize(30, 32).setDepth(9.5);
-    a.body.setCircle(a.width * .4, a.width * .1, a.height * .1); a.body.setGravityY(-GRAV + 760).setBounce(.5, .5); a.setVelocity(dir * 640, this.mount && this.mount.kind === 'eagle' ? 120 : -250); a.bounces = 0; a.life = 1.7; this.gApple.add(a); this.objs.push(a);
+    a.bounces = 0; a.life = 1.9; this.gApple.add(a); this.objs.push(a);
+    // set the throw AFTER the group add (adding resets the body to a plain drop)
+    const eagleThrow = this.mount && this.mount.kind === 'eagle', carry = clamp(sp.body.velocity.x * dir, 0, 330);
+    a.body.setCircle(a.width * .4, a.width * .1, a.height * .1); a.body.setGravityY(-GRAV + 900).setBounce(.55, .55); a.body.setAngularVelocity(dir * 900); a.body.setVelocity(dir * (610 + carry * .5), eagleThrow ? 90 : -340);
     this.cols.push(this.physics.add.collider(a, this.gGround, () => { a.bounces++; }), this.physics.add.collider(a, this.gSolid, () => { a.bounces += 2; }));
     Sfx.throwA();
     if (!this.mount) { this.atkAnim = true; this.hero.anims.stop(); this.hero.anims.timeScale = 1; this.hero.play('h_bite'); this.hero.anims.timeScale = 1; this.time.delayedCall(330, () => { this.atkAnim = false; }); }
@@ -686,7 +696,7 @@ class Play extends Phaser.Scene {
     if (kind === 'elephant') { sp = this.physics.add.sprite(x, y, 'elephant_idle', 0).setOrigin(.5, .98).setScale(.76).setDepth(8.5); sp.body.setSize(220, 140).setOffset(40, 43); hp = 3; sp.play('elephant_idle'); }
     else { sp = this.physics.add.sprite(x, y, 'eagle_fly', 0).setOrigin(.5, .5).setScale(.6).setDepth(8.5); sp.body.setSize(160, 100).setOffset(35, 120); sp.body.setAllowGravity(false); hp = 2; sp.play('eagle_fly'); }
     sp.body.setMaxVelocity(700, 1500); sp.body.setCollideWorldBounds(true); sp.face = this.hero.face || 1; this.objs.push(sp);
-    const mt = { kind, sp, hp, maxHp: hp, dash: 0, cd: 0 }; sp.mt = mt; this.addColliders(sp);
+    const mt = { kind, sp, hp, maxHp: hp, dash: 0, cd: 0, fuel: kind === 'eagle' ? EAGLE_FUEL : 0, tired: false }; sp.mt = mt; this.addColliders(sp);
     if (ride) this.mountOn(mt); else this.parked.push(mt);
     return mt;
   }
@@ -806,7 +816,7 @@ class Play extends Phaser.Scene {
     this.physics.overlap(sp, this.gItem, (p, it) => this.collect(it));
     this.physics.overlap(sp, this.gEnemy, (p, e) => this.touchEnemy(p, e.en));
     if (this.boss && this.boss.hp > 0) this.touchBoss();
-    this.physics.overlap(this.gApple, this.gEnemy, (a, e) => { if (!a.active) return; this.hitEnemy(e.en, 1, Math.sign(e.x - a.x)); a.destroy(); });
+    this.physics.overlap(this.gApple, this.gEnemy, (a, e) => { if (!a.active) return; this.hitEnemy(e.en, 1, Math.sign(e.x - a.x)); this.dust(a.x, a.y, 3); a.destroy(); });
     if (this.boss && this.boss.hp > 0) this.physics.overlap(this.gApple, this.boss.spr, a => { if (a.active) { this.hitBoss(1, Math.sign(a.body.velocity.x)); a.destroy(); } });
     this.physics.overlap(sp, this.gHaz, () => this.hurt(null, 1));
     this.physics.overlap(sp, this.gSpring, (p, z) => { if (b.velocity.y > 60 && b.bottom < z.body.top + 28) { b.setVelocityY(-1180); Sfx.spring(); if (z.im) this.tweens.add({ targets: z.im, scaleY: z.im.scaleY * .7, scaleX: z.im.scaleX * 1.2, duration: 90, yoyo: true }); } });
@@ -821,7 +831,6 @@ class Play extends Phaser.Scene {
   touchEnemy(p, en) {
     if (en.dead) return; const m = this.mount, h = this.hero, b = p.body, e = en.spr;
     if (m && m.kind === 'elephant') { this.hitEnemy(en, 3, Math.sign(e.x - p.x)); if (m.dash > 0) en.hp = 0; if (en.hp <= 0 && !en.dead) this.killEnemy(en); return; }
-    if (m && m.kind === 'eagle' && en.k !== 'cat') { this.hitEnemy(en, 2, Math.sign(e.x - p.x)); return; }
     if (b.velocity.y > 90 && b.bottom < e.body.top + 34 && !m) { this.hitEnemy(en, 2, Math.sign(e.x - p.x)); b.setVelocityY(this.jumpHeldNow() ? -720 : -540); Sfx.stomp(); this.dust(e.x, e.y); return; }
     if (m && b.velocity.y > 90 && b.bottom < e.body.top + 34) { this.hitEnemy(en, 2, 0); b.setVelocityY(-520); return; }
     this.hurt(e.x, 1);
@@ -924,7 +933,8 @@ class Play extends Phaser.Scene {
   hudApples() { const el = $('apples'); if (el.textContent !== String(this.apples)) { el.textContent = this.apples; if (window.RK && this.state === 'play') RK.ui.bounce(el); } }
   hudLetters() { document.querySelectorAll('#hud-letters .lt').forEach((e, i) => e.classList.toggle('on', !!this.letters[i])); }
   hudMount() {
-    const m = this.mount, b = $('mount-badge'), hs = $('mount-hearts'); if (!m) { b.classList.add('hidden'); hs.innerHTML = ''; return; }
+    const m = this.mount, b = $('mount-badge'), hs = $('mount-hearts'); const stam = $('mount-stamina'); if (!m) { b.classList.add('hidden'); hs.innerHTML = ''; if (stam) stam.classList.add('hidden'); return; }
+    if (stam) { stam.classList.toggle('hidden', m.kind !== 'eagle'); stam.classList.remove('low'); stam.firstChild.style.width = '100%'; }
     b.classList.remove('hidden'); b.textContent = m.kind === 'elephant' ? '🐘 코끼리' : '🦅 독수리'; let s = ''; for (let i = 0; i < m.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < m.hp ? '' : 'off'}" alt="">`; hs.innerHTML = s;
   }
   updateWorldBits(dt) {

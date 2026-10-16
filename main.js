@@ -767,6 +767,9 @@ class Game extends Phaser.Scene {
   }
   continuePlay() {
     Sfx.ui(); $('complete').classList.add('hidden'); $('confetti').innerHTML = ''; this.state = 'play';
+    this.nextChapterIfPending();
+  }
+  nextChapterIfPending() {
     const nxt = { 5: 2, 8: 3, 11: 4 }[this.stage];   // chapter finished -> the next one begins
     if (nxt && !this.chStarted[nxt]) this.startChapter(nxt);
   }
@@ -865,10 +868,11 @@ class Game extends Phaser.Scene {
       if (s === 3) return this.openDialog([S('골목 상점가에 캣 패밀리 놈들이 어슬렁거립니다. 가서 혼쭐을 내주십쇼!')]);
       if (s === 6) return this.openDialog([S('창고 지구에 캣 패밀리가 몰려 있습니다, 보스! 졸개부터 정리하십쇼! (미니맵 분홍 구역입니다)')]);
       if (s === 7) return this.openDialog([S('두목입니다! 붉은 표시가 뜨면 피하십쇼. 내려찍기는 점프로, 돌진은 옆으로요!')]);
-      if (s === 8) return this.openDialog([S('창고까지 되찾으셨습니다, 보스!! 이제 하늘 쪽 스카이 크루가 공원을 노립니다!')]);
+      if (s === 5) return this.openDialog([S('다음은 창고 지구의 캣 패밀리 아지트입니다, 보스! 가시죠!')], () => this.nextChapterIfPending());
+      if (s === 8) return this.openDialog([S('창고까지 되찾으셨습니다, 보스!! 이제 하늘 쪽 스카이 크루가 공원을 노립니다!')], () => this.nextChapterIfPending());
       if (s === 9) return this.openDialog([S('공원에 스카이 크루 비둘기들이 몰려 있습니다, 보스! 하늘색 구역입니다!')]);
       if (s === 10) return this.openDialog([S('대장 구구입니다! 급강하와 범위 공격의 붉은 예고를 잘 보십쇼!')]);
-      if (s === 11) return this.openDialog([S('공원까지 되찾으셨습니다!! 이제 땅 밑 언더그라운드만 남았습니다, 보스!')]);
+      if (s === 11) return this.openDialog([S('공원까지 되찾으셨습니다!! 이제 땅 밑 언더그라운드만 남았습니다, 보스!')], () => this.nextChapterIfPending());
       if (s === 12) return this.openDialog([S('빵집 거리에서 쥐들이 몰려나옵니다! 보라색 구역입니다, 보스!')]);
       if (s === 13) return this.openDialog([S('치즈 왕입니다! 쾅 소리가 나기 전에 점프하십쇼!')]);
       if (s >= 14) return this.openDialog([S('해냈습니다 보스!! 이제 이 도시의 보스는 보스뿐입니다!! (선글라스를 벗고 눈물을 닦는 중)')]);

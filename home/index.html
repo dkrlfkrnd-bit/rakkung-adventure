@@ -7,8 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1c1b33">
 <title>라꿍이의 집으로 가는 길</title>
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="../shared/rk.css">
+<link rel="stylesheet" href="style.css?v=20261016b">
+<link rel="stylesheet" href="../shared/rk.css?v=20261016b">
 </head>
 <body>
 <div id="stage">
@@ -22,7 +22,7 @@
         <img id="portrait" src="assets/portrait.webp" alt="">
         <div class="hh-body">
           <div class="hh-row"><span id="hearts"></span><span id="lives">×3</span></div>
-          <div class="hh-row small"><span id="mount-badge" class="hidden"></span><span id="mount-hearts"></span></div>
+          <div class="hh-row small"><span id="mount-badge" class="hidden"></span><span id="mount-hearts"></span><span id="mount-stamina" class="hidden"><i></i></span></div>
         </div>
       </div>
       <div class="hud-card" id="hud-letters"><span class="lt" data-i="0">라</span><span class="lt" data-i="1">꿍</span><span class="lt" data-i="2">이</span></div>
@@ -63,6 +63,7 @@
       </div>
       <button id="btn-full" class="mode-btn">전체화면으로 보기</button>
       <a class="back-link" href="../index.html">← 라꿍이의 모험 (아이소메트릭 게임)</a>
+      <div class="build">빌드 20261016b</div>
     </div>
   </div>
 
@@ -104,7 +105,7 @@
 </div>
 
 <script src="../lib/phaser.min.js"></script>
-<script src="../shared/rk.js"></script>
-<script src="game.js"></script>
+<script src="../shared/rk.js?v=20261016b"></script>
+<script src="game.js?v=20261016b"></script>
 </body>
 </html>

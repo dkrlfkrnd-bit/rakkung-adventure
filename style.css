@@ -254,3 +254,5 @@ body.touch .bb-name{font-size:12px}
 @keyframes objBob{50%{transform:translateY(9px)}}
 #objective.hidden{display:none}
 #toast,#prompt{will-change:transform}
+
+.build{margin-top:6px;font-size:11px;opacity:.4}

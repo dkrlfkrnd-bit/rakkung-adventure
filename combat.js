@@ -209,7 +209,9 @@ window.RKCombat = {
         for (const m of this.enemies) if (m !== e && m.state !== 'dead' && !m.d.inert) { m.hp = 0; m.stunUntil = 0; this.killEnemy(m); }
         this.score += C.score; this.addXp(C.xp); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01); if (window.RK) { RK.music.play('town'); RK.vibrate([60, 40, 60]); }
         this.toast(C.done, 4200);
-        this.time.delayedCall(2200, () => { if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(ch); });
+        // keep trying until the clear screen can be shown (paused / busy at that moment must not swallow the hand-over to the next chapter)
+        const showDone = () => { if (this.stage !== C.stages[2]) return; if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(ch); else this.time.delayedCall(700, showDone); };
+        this.time.delayedCall(2200, showDone);
       },
       refreshBossHud() {
         const B = this.enemies.find(x => x.d.boss && x.state !== 'dead'), bar = $('boss-bar'); if (!bar) return;
