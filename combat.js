@@ -52,7 +52,7 @@ window.RKCombat = {
         const kb = this.input.keyboard;
         this.kJ = kb.addKey('J'); this.kK = kb.addKey('K'); this.kL = kb.addKey('L');
         this.ui = {
-          hpFill: $('hp-fill'), hpText: $('hp-text'), xpFill: $('xp-fill'), lvl: $('lvl'),
+          hpFill: $('hp-fill'), hpGhost: $('hp-ghost'), hpText: $('hp-text'), xpFill: $('xp-fill'), lvl: $('lvl'),
           sk: { bite: $('sk-bite'), dash: $('sk-dash'), bark: $('sk-bark'), crew: $('sk-crew') },
         };
         this.refreshCombatHud(0);
@@ -129,7 +129,7 @@ window.RKCombat = {
         this.chDown[ch] = C.n - remaining; this.chStarted[ch] = true; this.setStage(C.stages[0]);
         const z = this.zones.find(q => q.id === C.zone); if (z) { z.owner = C.before; this.redrawMinimapBase(); }
         C.spots.slice(0, remaining).forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy(C.soldier, p.gx, p.gy, { tag: 'sold' + ch }); });
-        if (!silent) { this.toast(C.start, 4200); Sfx.fanfare(); }
+        if (!silent) { this.toast(C.start, 4200); Sfx.fanfare(); if (window.RK) RK.ui.banner('CHAPTER ' + ch, ({ 2: '캣 패밀리의 아지트', 3: '스카이 크루의 습격', 4: '언더그라운드의 반격' })[ch]); }
       },
       startBossIntro(ch) {
         const C = CH[ch]; this.setStage(C.stages[1]); Sfx.tone(120, .5, 'sawtooth', .08, 40);
@@ -138,6 +138,7 @@ window.RKCombat = {
       spawnBoss(ch) {
         const C = CH[ch], p = this.freeSpot(C.bossAt[0], C.bossAt[1]), e = this.spawnEnemy(C.boss, p.gx, p.gy, { tag: 'boss' }); e.ch = ch;
         e.state = 'chase'; e.nextAtk = this.time.now + 1600; this.cameras.main.shake(300, .01); this.toast(C.bossToast, 2200); Sfx.tone(100, .6, 'sawtooth', .1, 50);
+        if (window.RK) { RK.ui.banner('BOSS', e.d.name, 'boss', 2400); RK.music.play('boss'); RK.vibrate(80); }
         const nm = $('boss-name'); if (nm) nm.textContent = (e.d.crown || '👑') + ' ' + e.d.name;
         this.burst(sx(e.gx, e.gy), sy(e.gx, e.gy) - 80, ['💨', '⭐'], 8);
       },
@@ -192,7 +193,7 @@ window.RKCombat = {
         } else if (e.atk === 'slam') {
           const x = sx(e.gx, e.gy), y = sy(e.gx, e.gy), R = kit === 'cheese' ? 4 : 3.6, col = kit === 'gugu' ? 0x9fd0ff : kit === 'cheese' ? 0xffd34a : 0xff6a4a;
           this.addFx({ type: 'ring', x, y, t0: time, dur: 560, R: R * TW / 2 * 1.42, color: col, w: 10, iso: true });
-          this.cameras.main.shake(260, .012); Sfx.noise(.3, .1, 200); Sfx.tone(80, .3, 'square', .1, -30);
+          this.cameras.main.shake(260, .012); Sfx.noise(.3, .1, 200); Sfx.tone(80, .3, 'square', .1, -30); if (window.RK) RK.vibrate(50);
           if (!this.dead && !this.jumping && Math.hypot(h.gx - e.gx, h.gy - e.gy) < R) this.hurtPlayer(d.dmg + 8, e.gx, e.gy);
           e.state = 'recover'; e.recoverAt = time + 900; e.nextAtk = time + 1700 * cdMul;
         } else { e.state = 'dash'; e.dashUntil = time + 640; e.dashHit = false; Sfx.noise(.3, .08, 500); Sfx.tone(200, .3, 'sawtooth', .06, 400); }
@@ -206,7 +207,7 @@ window.RKCombat = {
         const ch = e.ch || 2, C = CH[ch]; this.setStage(C.stages[2]);
         C.flip.forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; }); this.redrawMinimapBase();
         for (const m of this.enemies) if (m !== e && m.state !== 'dead' && !m.d.inert) { m.hp = 0; m.stunUntil = 0; this.killEnemy(m); }
-        this.score += C.score; this.addXp(C.xp); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01);
+        this.score += C.score; this.addXp(C.xp); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01); if (window.RK) { RK.music.play('town'); RK.vibrate([60, 40, 60]); }
         this.toast(C.done, 4200);
         this.time.delayedCall(2200, () => { if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(ch); });
       },
@@ -219,7 +220,7 @@ window.RKCombat = {
         if (e.state === 'dead') return;
         const t = this.time.now; dmg = Math.round(dmg);
         e.hp -= dmg; e.flashUntil = t + 90; e.spr.setTintFill(0xffffff);
-        this.hitstopUntil = Math.max(this.hitstopUntil, t + (o.big ? 80 : 45));
+        this.hitstopUntil = Math.max(this.hitstopUntil, t + (o.big ? 80 : 45)); if (o.big && window.RK) RK.vibrate(18);
         // knockback away from source
         const dx = e.gx - from.gx, dy = e.gy - from.gy, l = Math.hypot(dx, dy) || 1, kb = (o.kb || 1.2) * (e.d.kbMul || 1);
         e.kv.gx += dx / l * kb * 6; e.kv.gy += dy / l * kb * 6;
@@ -348,7 +349,7 @@ window.RKCombat = {
         dmg = Math.round(dmg); this.hp = Math.max(0, this.hp - dmg); this.invulnUntil = t + 750; this.hurtLockUntil = t + 180;
         const dx = this.hero.gx - fromGx, dy = this.hero.gy - fromGy, l = Math.hypot(dx, dy) || 1; this.hurtV = { gx: dx / l * 5, gy: dy / l * 5, until: t + 160 };
         this.dog.setTintFill(0xff4a4a); this.time.delayedCall(110, () => { if (!this.dead) this.dog.clearTint(); });
-        this.cameras.main.shake(130, 0.006);
+        this.cameras.main.shake(130, 0.006); if (window.RK) { RK.ui.hurt(); RK.vibrate(45); }
         this.floatText(sx(this.hero.gx, this.hero.gy), sy(this.hero.gx, this.hero.gy) - 140, `-${dmg}`, '#ff5a5a', 30);
         Sfx.tone(180, .16, 'sawtooth', .09, -90);
         this.refreshCombatHud(t);
@@ -519,6 +520,8 @@ window.RKCombat = {
       refreshCombatHud(time) {
         const u = this.ui; if (!u) return;
         u.hpFill.style.width = (100 * this.hp / this.maxHp) + '%'; u.hpFill.classList.toggle('low', this.hp < this.maxHp * 0.3);
+        if (u.hpGhost) u.hpGhost.style.width = (100 * this.hp / this.maxHp) + '%';
+        if (window.RK) RK.ui.lowhp(!this.dead && this.state !== 'title' && this.hp < this.maxHp * 0.3);
         u.hpText.textContent = `${Math.ceil(this.hp)} / ${this.maxHp}`;
         const lo = XP_NEED[this.lvl - 1], hi = XP_NEED[this.lvl] ?? XP_NEED[MAX_LVL - 1];
         u.xpFill.style.width = this.lvl >= MAX_LVL ? '100%' : (100 * (this.xp - lo) / (hi - lo)) + '%';

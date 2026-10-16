@@ -44,14 +44,16 @@ window.__touch ={ x: 0, y: 0, mag: 0, j: false, run: false, on: false, joyId: nu
     const g = () => window.__game, $$ = id => document.getElementById(id);
     document.addEventListener('contextmenu', e => e.preventDefault());
     // joystick
-    const joy = $$('joy'), knob = $$('joy-knob'), R = 46;
+    const joy = $$('joy'), knob = $$('joy-knob'), zone = $$('joy-zone') || joy, R = 46;
+    // floating stick: it appears under the thumb anywhere in the lower-left zone
+    const place = e => { const st = $$('stage').getBoundingClientRect(), s = joy.offsetWidth || 132, x = Math.max(s / 2 + 10, Math.min(st.width * .46, e.clientX - st.left)), y = Math.max(st.height * .26 + s / 2, Math.min(st.height - s / 2 - 10, e.clientY - st.top)); joy.style.left = (x - s / 2) + 'px'; joy.style.top = (y - s / 2) + 'px'; joy.style.bottom = 'auto'; };
     const move = e => { const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; let dx = e.clientX - cx, dy = e.clientY - cy; const l = Math.hypot(dx, dy) || 1, k = Math.min(1, l / R); T.x = dx / l * k; T.y = dy / l * k; T.mag = k; knob.style.transform = 'translate(' + (T.x * R) + 'px,' + (T.y * R) + 'px)'; };
-    joy.addEventListener('pointerdown', e => { T.joyId = e.pointerId; joy.setPointerCapture(e.pointerId); move(e); e.preventDefault(); });
-    joy.addEventListener('pointermove', e => { if (e.pointerId === T.joyId) move(e); });
-    const end = e => { if (e.pointerId !== T.joyId) return; T.joyId = null; T.x = T.y = T.mag = 0; knob.style.transform = ''; };
-    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end); joy.addEventListener('lostpointercapture', end);
+    zone.addEventListener('pointerdown', e => { T.joyId = e.pointerId; zone.setPointerCapture(e.pointerId); if (zone !== joy) { place(e); joy.classList.add('active'); } move(e); e.preventDefault(); if (window.RK) RK.resume(); });
+    zone.addEventListener('pointermove', e => { if (e.pointerId === T.joyId) move(e); });
+    const end = e => { if (e.pointerId !== T.joyId) return; T.joyId = null; T.x = T.y = T.mag = 0; knob.style.transform = ''; joy.classList.remove('active'); joy.style.left = joy.style.top = joy.style.bottom = ''; };
+    zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end); zone.addEventListener('lostpointercapture', end);
     // buttons
-    const tap = (el, fn) => { el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.add('on'); fn(true); }); const up = () => { el.classList.remove('on'); fn(false); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up); };
+    const tap = (el, fn) => { el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.add('on'); fn(true); if (window.RK) { RK.resume(); RK.vibrate(8); } }); const up = () => { el.classList.remove('on'); fn(false); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up); };
     const key = code => down => { if (down && g()) g().pressed[code] = true; };
     tap($$('tb-jump'), key('Space')); tap($$('tb-act'), key('KeyE'));
     tap($$('tb-run'), d => { if (d) { T.run = !T.run; $$('tb-run').classList.toggle('on', T.run); } });
@@ -69,24 +71,24 @@ window.__touch ={ x: 0, y: 0, mag: 0, j: false, run: false, on: false, joyId: nu
 /* ---------- tiny sound synth ---------- */
 const Sfx = (() => {
   let ctx = null;
-  const c = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
+  const c = () => { if (window.RK) return RK.ctx(); if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
   function tone(f, d, type = 'sine', v = 0.07, slide = 0) {
     const a = c(); if (!a) return;
     const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, a.currentTime);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), a.currentTime + d);
     g.gain.setValueAtTime(v, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + d);
-    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d);
+    o.connect(g); g.connect(window.RK ? RK.out() : a.destination); o.start(); o.stop(a.currentTime + d);
   }
   function noise(d, v = .08, hp = 800) {
     const a = c(); if (!a) return; const n = a.sampleRate * d, buf = a.createBuffer(1, n, a.sampleRate), ch = buf.getChannelData(0);
     for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
     const s = a.createBufferSource(); s.buffer = buf; const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = a.createGain(); g.gain.value = v;
-    s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+    s.connect(f); f.connect(g); g.connect(window.RK ? RK.out() : a.destination); s.start();
   }
   return {
     tone, noise,
-    resume() { const a = c(); if (a && a.state === 'suspended') a.resume(); },
+    resume() { if (window.RK) RK.resume(); const a = c(); if (a && a.state === 'suspended') a.resume(); },
     collect() { tone(660, .12, 'triangle'); setTimeout(() => tone(990, .2, 'triangle'), 90); },
     talk() { tone(280 + Math.random() * 90, .045, 'square', .025); },
     bark() { tone(240, .16, 'sawtooth', .08, -130); setTimeout(() => tone(210, .14, 'sawtooth', .07, -110), 140); },
@@ -138,7 +140,8 @@ class Boot extends Phaser.Scene {
     for (const f of idx.files) this.load.image('iso_' + f.replace(/\.(png|webp)$/, ''), `assets/iso/${f}`);
     const nm = this.cache.json.get('npcman');
     if (nm) for (const [ch, c] of Object.entries(nm.chars)) for (const an of Object.keys(c.anims)) this.load.spritesheet(`${ch}_${an}`, `assets/npc/${ch}_${an}.${nm.ext || 'png'}`, { frameWidth: c.frameW, frameHeight: c.frameH });
-    this.load.on('progress', v => { label.textContent = `리소스 불러오는 중… ${Math.round(v * 100)}%`; });
+    const lt = $('load-text'), lf = $('load-fill');
+    this.load.on('progress', v => { if (lt) lt.textContent = `리소스 불러오는 중… ${Math.round(v * 100)}%`; else label.textContent = `리소스 불러오는 중… ${Math.round(v * 100)}%`; if (lf) lf.style.width = Math.round(v * 100) + '%'; });
     this.load.once('complete', () => {
       for (const [name, a] of Object.entries(m.anims)) {
         const act = name.split('_')[0];
@@ -210,6 +213,7 @@ class Game extends Phaser.Scene {
     this.setStage(0); this.updateHud(); this.bindDom();
     $('title').classList.remove('hidden'); $('hud').classList.add('hidden');
     $('btn-start').classList.remove('hidden'); this.refreshModeButtons(); this.refreshTitleButtons();
+    if (window.RK) { RK.ui.mountSettings(document.querySelector('#title .title-inner'), $('btn-full')); RK.ui.mountSettings(document.querySelector('#pause .panel')); RK.music.play('title'); }
     $('pause').classList.add('hidden'); $('complete').classList.add('hidden'); $('dialog').classList.add('hidden');
     if (this.autostart) this.startGame();
   }
@@ -659,6 +663,50 @@ class Game extends Phaser.Scene {
   }
 
   /* ===== flow ===== */
+  /* ===== dialog portraits (AutoSprite art) and the objective pointer ===== */
+  portraitFor(who) {
+    this._pc = this._pc || {}; if (this._pc[who] !== undefined) return this._pc[who];
+    // Phaser revokes its blob: URLs after loading, so re-encode the texture pixels into a small data URL
+    const frame = key => { try { if (!this.textures.exists(key)) return null; const f = this.textures.get(key).get(0), k = Math.min(1, 220 / Math.max(f.width, f.height)), c = document.createElement('canvas'); c.width = Math.round(f.width * k); c.height = Math.round(f.height * k); c.getContext('2d').drawImage(f.source.image, f.cutX, f.cutY, f.width, f.height, 0, 0, c.width, c.height); return c.toDataURL('image/webp', .86); } catch (e) { return null; } };
+    const art = k => frame(k);
+    const map = { '라꿍이': 'home/assets/portrait.webp', '냥냥 사장님': art('iso_npc_cat_shop'), '구구 형님': art('iso_npc_pigeon'), '구구 대장': art('iso_npc_pigeon'), '꽥 경관': art('iso_npc_duck'), '쪼꼬미': art('iso_npc_mouse'), '치즈 왕': art('iso_npc_mouse'), '똘마니': frame('bear_idle_down'), '돈 캣': frame('cat_idle_down') };
+    return (this._pc[who] = map[who] || null);
+  }
+  objectiveTarget() {
+    const s = this.stage, h = this.hero, N = this.npcs || {};
+    const nearest = arr => { let b = null, bd = 1e9; for (const e of arr) { const d = Math.hypot(e.gx - h.gx, e.gy - h.gy); if (d < bd) { bd = d; b = e; } } return b; };
+    const alive = tag => (this.enemies || []).filter(e => e.state !== 'dead' && e.tag === tag);
+    if (s === 1) return N.bear;
+    if (s === 2) return this.dummy && this.dummy.state !== 'dead' ? this.dummy : null;
+    if (s === 3) return nearest(alive('cat3'));
+    if (s === 4) return N.cat;
+    for (const k of [2, 3, 4]) {
+      const C = this.chapterInfo(k);
+      if (s === C.stages[0] || s === C.stages[1]) { const boss = (this.enemies || []).find(e => e.d.boss && e.state !== 'dead'); return boss || nearest(alive('sold' + k)) || { gx: C.mark[0], gy: C.mark[1] }; }
+    }
+    if (this.side === 1) return N.pigeon;
+    if (this.side === 2) return { gx: 6.6, gy: 33 };
+    return null;
+  }
+  updateObjective() {
+    let el = document.getElementById('objective');
+    if (!el) { el = document.createElement('div'); el.id = 'objective'; el.className = 'hidden'; el.innerHTML = '<span class="arr"><i>➤</i></span><span class="lab"></span>'; $('stage').appendChild(el); }
+    const t = this.state === 'play' && !this.dead && !this.dashing ? this.objectiveTarget() : null;
+    if (!t) { el.classList.add('hidden'); return; }
+    const cam = this.cameras.main, wv = cam.worldView, canvas = document.querySelector('#game canvas'); if (!canvas) return;
+    const rect = canvas.getBoundingClientRect(), st = $('stage').getBoundingClientRect();
+    const px = rect.left + (sx(t.gx, t.gy) - wv.x) / wv.width * rect.width, py = rect.top + (sy(t.gx, t.gy) - 90 - wv.y) / wv.height * rect.height;
+    const mx = Math.min(74, rect.width * .16), my = Math.min((window.__touch && window.__touch.on) ? 96 : 120, rect.height * .3), inside = px > rect.left + mx && px < rect.right - mx && py > rect.top + my && py < rect.bottom - my;
+    const dist = Math.round(Math.hypot(t.gx - this.hero.gx, t.gy - this.hero.gy));
+    el.classList.remove('hidden'); el.classList.toggle('here', inside); el.lastChild.textContent = dist > 4 ? dist + 'm' : '';
+    if (inside) { el.style.left = (px - st.left) + 'px'; el.style.top = (py - st.top - 30) + 'px'; el.firstChild.firstChild.style.transform = 'rotate(90deg)'; }
+    else {
+      const cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2, a = Math.atan2(py - cy, px - cx);
+      const k = Math.min((rect.width / 2 - mx) / (Math.abs(Math.cos(a)) || 1e-6), (rect.height / 2 - my) / (Math.abs(Math.sin(a)) || 1e-6));
+      el.style.left = (cx + Math.cos(a) * k - st.left) + 'px'; el.style.top = (cy + Math.sin(a) * k - st.top) + 'px'; el.firstChild.firstChild.style.transform = 'rotate(' + a + 'rad)';
+    }
+  }
+
   /* ===== save / continue (localStorage; this browser only) ===== */
   readSave() {
     try { const s = JSON.parse(localStorage.getItem('rk_save_v1') || 'null'); return s && (s.v === 1 || s.v === 2) && s.stage >= 1 ? s : null; } catch (e) { return null; }
@@ -700,11 +748,17 @@ class Game extends Phaser.Scene {
     if (this.state !== 'title') return;
     Sfx.resume(); Sfx.ui();
     if (window.__touch && window.__touch.on) { try { const d = document.documentElement, p = (d.requestFullscreen || d.webkitRequestFullscreen || (() => {})).call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-    $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
-    this.state = 'play'; this.t0 = this.time.now;
-    const sv = resume && this.readSave(); if (sv) { this.applySave(sv); return; }
-    this.clearSave(); this.setStage(1);
-    this.time.delayedCall(450, () => this.say('여기가… 우리 구역이군.', 1800));
+    if (this._starting) return; this._starting = true;
+    const go = () => {
+      $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
+      this.state = 'play'; this.t0 = this.time.now; this._starting = false;
+      if (window.RK) RK.music.play('town');
+      const sv = resume && this.readSave(); if (sv) { this.applySave(sv); return; }
+      this.clearSave(); this.setStage(1);
+      if (window.RK) RK.ui.banner('CHAPTER 1', '새로운 보스의 등장');
+      this.time.delayedCall(1300, () => this.say('여기가… 우리 구역이군.', 1800));
+    };
+    if (window.RK) RK.ui.transition(go); else go();
   }
   restart() {
     Sfx.ui(); $('complete').classList.add('hidden'); $('pause').classList.add('hidden'); $('confetti').innerHTML = '';
@@ -760,7 +814,8 @@ class Game extends Phaser.Scene {
     this.digGlow.setAlpha(this.side === 2 ? 1 : 0);
   }
   updateHud() {
-    $('score').textContent = this.score; $('snack-count').textContent = this.snacks;
+    const scEl = $('score'); if (scEl.textContent !== String(this.score)) { scEl.textContent = this.score; if (window.RK && this.state !== 'title') RK.ui.bounce(scEl); }
+    $('snack-count').textContent = this.snacks;
     const box = $('snack-slots'); box.innerHTML = '';
     const ems = ['🌭', '🦴', '🍪', '🥩', '🧀'];
     for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'slot' + (i < this.snacks ? ' on' : ''); d.textContent = ems[i]; box.appendChild(d); }
@@ -780,7 +835,9 @@ class Game extends Phaser.Scene {
   }
   showLine() {
     const L = this.dialog.lines[this.dialog.i];
-    $('dlg-portrait').textContent = L.icon; $('dlg-name').textContent = L.who; $('dlg-text').textContent = '';
+    const pUrl = this.portraitFor(L.who), pEl = $('dlg-portrait');
+    if (pUrl) { pEl.textContent = ''; pEl.style.setProperty('--pimg', 'url("' + pUrl + '")'); pEl.classList.add('art'); pEl.classList.toggle('face', L.who === '라꿍이'); } else { pEl.textContent = L.icon; pEl.classList.remove('art', 'face'); }
+    $('dlg-name').textContent = L.who; $('dlg-text').textContent = '';
     this.dialog.typing = true; let k = 0; const full = L.text;
     if (this.dialog.timer) clearInterval(this.dialog.timer);
     this.dialog.timer = setInterval(() => { k++; $('dlg-text').textContent = full.slice(0, k); if (k % 2 === 0) Sfx.talk(); if (k >= full.length) { clearInterval(this.dialog.timer); this.dialog.typing = false; } }, 28);
@@ -886,6 +943,7 @@ class Game extends Phaser.Scene {
       $('res-score').textContent = this.score; $('res-snacks').textContent = `Lv.${this.lvl}`;
       $('res-time').textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
       $('res-rank').textContent = `${this.kills || 0}마리`;
+      if (window.RK) { RK.ui.countUp($('res-score'), this.score, 1100); RK.ui.countUp($('res-rank'), this.kills || 0, 900, v => v + '마리'); }
       this.state = 'complete'; $('complete').classList.remove('hidden'); Sfx.fanfare();
       const box = $('confetti'); box.innerHTML = '';
       for (let i = 0; i < 40; i++) { const s = document.createElement('div'); s.className = 'conf'; s.textContent = ['🎉', '⭐', '🐾', '❤️', '✨'][i % 5]; s.style.left = Math.random() * 100 + '%'; s.style.animationDuration = 3 + Math.random() * 3 + 's'; s.style.animationDelay = Math.random() * 2 + 's'; box.appendChild(s); }
@@ -956,7 +1014,7 @@ class Game extends Phaser.Scene {
     }
     for (const id in this.npcs) { const n = this.npcs[id]; if (n.art) n.sprite.setFlipX(sx(h.gx, h.gy) < sx(n.gx, n.gy) - 4);
       else if (n.char) { const dx = sx(h.gx, h.gy) - sx(n.gx, n.gy), dy = sy(h.gx, h.gy) - sy(n.gx, n.gy), d = DIR8[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8], k = `npc_${n.char}_idle_${d}`; if (this.anims.exists(k) && n.sprite.anims.currentAnim?.key !== k) n.sprite.play(k, true); } }
-    this.updateCombat(time, dt);
+    this.updateCombat(time, dt); this.updateObjective();
     if (!this.dead && !this.dashing) {
       if (time < (this.happyUntil || 0)) { /* holding the happy clip */ }
       else if (!this.jumping && !this.atkAnim) this.play(moving ? (running ? 'run' : 'walk') : 'idle', this.lastDir);

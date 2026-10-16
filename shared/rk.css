@@ -1,0 +1,69 @@
+/* RK shared polish: screen transitions, micro-interactions, banners, vignette, settings, floating joystick */
+:root{--rk-ease:cubic-bezier(.2,1.4,.4,1)}
+
+/* ---- overlays glide in instead of popping ---- */
+@keyframes rkScreenIn{from{opacity:0}to{opacity:1}}
+@keyframes rkPanelIn{from{opacity:0;transform:translateY(18px) scale(.94)}to{opacity:1;transform:none}}
+@keyframes rkTitleIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+.screen:not(.hidden){animation:rkScreenIn .35s ease-out}
+.screen:not(.hidden) .panel{animation:rkPanelIn .5s var(--rk-ease) both}
+.screen:not(.hidden) .title-inner>*{animation:rkTitleIn .6s var(--rk-ease) both}
+.title-inner>*:nth-child(2){animation-delay:.05s!important}.title-inner>*:nth-child(3){animation-delay:.1s!important}.title-inner>*:nth-child(4){animation-delay:.15s!important}
+.title-inner>*:nth-child(5){animation-delay:.2s!important}.title-inner>*:nth-child(6){animation-delay:.25s!important}.title-inner>*:nth-child(7){animation-delay:.3s!important}
+@keyframes rkFloat{50%{transform:translateY(-6px)}}
+#title h1{animation:rkTitleIn .6s var(--rk-ease) both,rkFloat 4.2s ease-in-out .8s infinite!important}
+
+/* ---- buttons feel alive ---- */
+.big-btn,.mode-btn,.round,.tb,.skill,.stage-btn{transition:transform .12s var(--rk-ease),filter .15s,background .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent}
+.big-btn:not([disabled]):hover{filter:brightness(1.06)}
+.big-btn:focus-visible,.mode-btn:focus-visible,.round:focus-visible,a:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.mode-btn:active,.round:active{transform:scale(.94)}
+.big-btn[disabled]{cursor:not-allowed}
+@keyframes rkShine{0%{transform:translateX(-120%) skewX(-20deg)}60%,100%{transform:translateX(220%) skewX(-20deg)}}
+#btn-start:not(.ghost),#btn-load,#btn-next,#btn-resume{position:relative;overflow:hidden}
+#btn-start:not(.ghost)::after,#btn-load::after,#btn-next::after,#btn-resume::after{content:"";position:absolute;top:0;bottom:0;width:36%;left:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:rkShine 3.2s ease-in-out 1s infinite;pointer-events:none}
+
+/* ---- settings (sound / vibration) ---- */
+.rk-settings{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.rk-settings .mode-btn{margin-top:0}
+.rk-settings .mode-btn.off{opacity:.6;filter:grayscale(.7)}
+#pause .rk-settings{margin-top:16px}
+
+/* ---- full-screen fade ---- */
+#rk-fade{position:absolute;inset:0;background:#0d0a1c;opacity:0;pointer-events:none;z-index:45;transition:opacity .28s ease}
+#rk-fade.on{opacity:1;pointer-events:auto}
+
+/* ---- stage / chapter / boss banners ---- */
+#rk-banner{position:absolute;left:0;right:0;top:30%;z-index:30;text-align:center;pointer-events:none;padding:14px 16px;opacity:0;
+  background:linear-gradient(90deg,rgba(20,14,40,0),rgba(20,14,40,.78) 18%,rgba(20,14,40,.78) 82%,rgba(20,14,40,0))}
+#rk-banner .k{font-size:clamp(11px,1.6vw,15px);letter-spacing:.42em;color:var(--gold,#ffcf5a);margin-bottom:4px;text-shadow:0 2px 0 rgba(0,0,0,.4)}
+#rk-banner .t{font-size:clamp(26px,5.6vw,58px);line-height:1.1;color:#fff;text-shadow:0 4px 0 #6b3fa0,0 8px 24px rgba(0,0,0,.5)}
+#rk-banner.boss{background:linear-gradient(90deg,rgba(60,8,16,0),rgba(70,10,20,.82) 18%,rgba(70,10,20,.82) 82%,rgba(60,8,16,0))}
+#rk-banner.boss .k{color:#ff9a8a}
+#rk-banner.boss .t{text-shadow:0 4px 0 #8a1a1a,0 8px 24px rgba(0,0,0,.5)}
+@keyframes rkBanner{0%{opacity:0;transform:translateX(-70px) scaleY(.6)}10%{opacity:1;transform:none}82%{opacity:1;transform:none}100%{opacity:0;transform:translateX(70px) scaleY(.6)}}
+#rk-banner.go{animation-name:rkBanner;animation-timing-function:cubic-bezier(.2,.9,.3,1);animation-fill-mode:both}
+
+/* ---- damage / low health vignette ---- */
+#rk-hurt{position:absolute;inset:0;pointer-events:none;z-index:4;opacity:0;transition:opacity .5s ease-out;background:radial-gradient(ellipse at center,rgba(255,40,60,0) 52%,rgba(255,40,60,.62) 100%)}
+#rk-hurt.flash{opacity:1;transition:none}
+@keyframes rkLow{0%,100%{opacity:.08}50%{opacity:.5}}
+#rk-hurt.low{animation:rkLow 1.2s ease-in-out infinite}
+
+/* ---- counters ---- */
+@keyframes rkBounce{0%{transform:scale(1)}35%{transform:scale(1.32)}100%{transform:scale(1)}}
+.rk-bounce{animation:rkBounce .35s ease-out;display:inline-block}
+
+/* ---- loading bar ---- */
+.rk-loadbar{display:inline-block;width:min(300px,70vw);height:12px;border-radius:8px;background:rgba(255,255,255,.14);overflow:hidden;vertical-align:middle;margin-left:10px;border:1px solid rgba(255,207,90,.5)}
+.rk-loadbar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe28a,#ffb92e);transition:width .2s}
+
+/* ---- floating joystick (touch): appears under the thumb anywhere in the lower-left area ---- */
+body.touch #joy-zone{position:absolute;left:0;bottom:0;width:48%;height:76%;pointer-events:auto;touch-action:none}
+body.touch #joy{pointer-events:none!important;opacity:.5;transition:opacity .18s}
+body.touch #joy.active{opacity:1}
+body.touch #joy-knob{transition:transform .04s linear}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}

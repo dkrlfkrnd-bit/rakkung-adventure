@@ -51,13 +51,15 @@ const T = { on: false, x: 0, y: 0, mag: 0, joyId: null, jumpHeld: false, jumpHit
     T.on = true; document.body.classList.add('touch');
     const pb = $('btn-portrait'); if (pb) pb.addEventListener('click', () => { document.body.classList.add('portrait-ok'); orient(); if (window.__home && window.__home.applyZoom) window.__home.applyZoom(); });
     document.addEventListener('contextmenu', e => e.preventDefault());
-    const joy = $('joy'), knob = $('joy-knob'), R = 46;
+    const joy = $('joy'), knob = $('joy-knob'), zone = $('joy-zone') || joy, R = 46;
+    // floating stick: it appears under the thumb anywhere in the lower-left zone
+    const place = e => { const st = $('stage').getBoundingClientRect(), s = joy.offsetWidth || 132, x = Math.max(s / 2 + 10, Math.min(st.width * .46, e.clientX - st.left)), y = Math.max(st.height * .26 + s / 2, Math.min(st.height - s / 2 - 10, e.clientY - st.top)); joy.style.left = (x - s / 2) + 'px'; joy.style.top = (y - s / 2) + 'px'; joy.style.bottom = 'auto'; };
     const move = e => { const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; let dx = e.clientX - cx, dy = e.clientY - cy; const l = Math.hypot(dx, dy) || 1, k = Math.min(1, l / R); T.x = dx / l * k; T.y = dy / l * k; T.mag = k; knob.style.transform = 'translate(' + (T.x * R) + 'px,' + (T.y * R) + 'px)'; };
-    joy.addEventListener('pointerdown', e => { T.joyId = e.pointerId; joy.setPointerCapture(e.pointerId); move(e); e.preventDefault(); Sfx.resume(); });
-    joy.addEventListener('pointermove', e => { if (e.pointerId === T.joyId) move(e); });
-    const end = e => { if (e.pointerId !== T.joyId) return; T.joyId = null; T.x = T.y = T.mag = 0; knob.style.transform = ''; };
-    joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end); joy.addEventListener('lostpointercapture', end);
-    const tap = (el, fn) => { el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.add('on'); fn(true); Sfx.resume(); }); const up = () => { el.classList.remove('on'); fn(false); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up); };
+    zone.addEventListener('pointerdown', e => { T.joyId = e.pointerId; zone.setPointerCapture(e.pointerId); if (zone !== joy) { place(e); joy.classList.add('active'); } move(e); e.preventDefault(); Sfx.resume(); });
+    zone.addEventListener('pointermove', e => { if (e.pointerId === T.joyId) move(e); });
+    const end = e => { if (e.pointerId !== T.joyId) return; T.joyId = null; T.x = T.y = T.mag = 0; knob.style.transform = ''; joy.classList.remove('active'); joy.style.left = joy.style.top = joy.style.bottom = ''; };
+    zone.addEventListener('pointerup', end); zone.addEventListener('pointercancel', end); zone.addEventListener('lostpointercapture', end);
+    const tap = (el, fn) => { el.addEventListener('pointerdown', e => { e.preventDefault(); el.classList.add('on'); fn(true); Sfx.resume(); if (window.RK) RK.vibrate(8); }); const up = () => { el.classList.remove('on'); fn(false); }; el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('pointerleave', up); };
     tap($('tb-jump'), d => { T.jumpHeld = d; if (d) T.jumpHit = true; });
     tap($('tb-throw'), d => { if (d) T.atkHit = true; });
     tap($('tb-act'), d => { if (d) T.actHit = true; });
@@ -84,23 +86,23 @@ function readInput() {
 /* ---------- tiny sound synth ---------- */
 const Sfx = (() => {
   let ctx = null;
-  const c = () => { if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
+  const c = () => { if (window.RK) return RK.ctx(); if (!ctx) { try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } return ctx; };
   function tone(f, d, type = 'sine', v = 0.07, slide = 0) {
     const a = c(); if (!a) return;
     const o = a.createOscillator(), g = a.createGain();
     o.type = type; o.frequency.setValueAtTime(f, a.currentTime);
     if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, f + slide), a.currentTime + d);
     g.gain.setValueAtTime(v, a.currentTime); g.gain.exponentialRampToValueAtTime(0.0001, a.currentTime + d);
-    o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d);
+    o.connect(g); g.connect(window.RK ? RK.out() : a.destination); o.start(); o.stop(a.currentTime + d);
   }
   function noise(d, v = .08, hp = 800) {
     const a = c(); if (!a) return; const n = Math.floor(a.sampleRate * d), buf = a.createBuffer(1, n, a.sampleRate), ch = buf.getChannelData(0);
     for (let i = 0; i < n; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / n);
     const s = a.createBufferSource(); s.buffer = buf; const f = a.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = hp; const g = a.createGain(); g.gain.value = v;
-    s.connect(f); f.connect(g); g.connect(a.destination); s.start();
+    s.connect(f); f.connect(g); g.connect(window.RK ? RK.out() : a.destination); s.start();
   }
   return {
-    resume() { const a = c(); if (a && a.state === 'suspended') a.resume(); },
+    resume() { if (window.RK) RK.resume(); const a = c(); if (a && a.state === 'suspended') a.resume(); },
     jump() { tone(300, .2, 'sine', .06, 340); },
     star() { tone(880, .09, 'triangle', .05); setTimeout(() => tone(1320, .14, 'triangle', .05), 70); },
     heart() { [523, 659, 784].forEach((f, i) => setTimeout(() => tone(f, .16, 'triangle', .07), i * 90)); },
@@ -117,6 +119,9 @@ const Sfx = (() => {
     boss() { tone(110, .5, 'sawtooth', .09, 40); },
   };
 })();
+
+// background music per stage: alley / park / river by day, then night, rain, moonlit river
+const STAGE_MUSIC = ['day', 'day', 'day', 'night', 'rain', 'night'];
 
 /* ---------- stage data ---------- */
 function rowStars(E, x0, y, n, dx = 56) { for (let i = 0; i < n; i++) E.push({ k: 'star', x: x0 + i * dx, y }); }
@@ -286,7 +291,8 @@ class Boot extends Phaser.Scene {
   constructor() { super('boot'); }
   preload() {
     const L = this.load, bar = $('title-loading');
-    L.on('progress', p => { if (bar) bar.textContent = '리소스 불러오는 중… ' + Math.round(p * 100) + '%'; });
+    const lt = $('load-text'), lf = $('load-fill');
+    L.on('progress', p => { const t = '리소스 불러오는 중… ' + Math.round(p * 100) + '%'; if (lt) lt.textContent = t; else if (bar) bar.textContent = t; if (lf) lf.style.width = Math.round(p * 100) + '%'; });
     HERO_ACTS.forEach(a => L.spritesheet('h_' + a, `../assets/sprites/${a}_right.webp`, { frameWidth: 192, frameHeight: 192 }));
     L.spritesheet('cat_walk', '../assets/npc/cat_walk_southeast.webp', { frameWidth: 221, frameHeight: 224 });
     L.spritesheet('cat_idle', '../assets/npc/cat_idle_southeast.webp', { frameWidth: 221, frameHeight: 224 });
@@ -310,7 +316,7 @@ class Play extends Phaser.Scene {
     this.stageStars = 0; this.stageTotalStars = 0;
     this.unlocked = clamp(parseInt(tryLS.get('rk2_unlocked', '1'), 10) || 1, 1, 6);
     this.mkAnims(); this.mkTextures();
-    this.cols = []; this.objs = [];
+    this.cols = []; this.objs = []; this.fx2 = { sx: 1, sy: 1, vy: 0, was: true, run: 0, look: 80 };
     this.physics.world.setBoundsCollision(true, true, false, false);
     this.bindUI();
     this.buildStage(0, true);
@@ -338,26 +344,29 @@ class Play extends Phaser.Scene {
     const on = (id, fn) => { const e = $(id); if (e) e.addEventListener('click', ev => { Sfx.resume(); fn(ev); }); };
     on('btn-pause', () => this.togglePause());
     on('btn-resume', () => this.togglePause());
-    on('btn-retry', () => this.startStage(this.stageIdx, true));
-    on('btn-menu', () => this.toMenu());
-    on('btn-next', () => { if (this.stageIdx < 5) this.startStage(this.stageIdx + 1, false); else this.toMenu(); });
-    on('btn-again', () => this.startStage(this.stageIdx, true));
-    on('btn-over-retry', () => this.startStage(this.stageIdx, true));
-    on('btn-over-menu', () => this.toMenu());
+    on('btn-retry', () => this.fade(() => this.startStage(this.stageIdx, true)));
+    on('btn-menu', () => this.fade(() => this.toMenu()));
+    on('btn-next', () => this.fade(() => { if (this.stageIdx < 5) this.startStage(this.stageIdx + 1, false); else this.toMenu(); }));
+    on('btn-again', () => this.fade(() => this.startStage(this.stageIdx, true)));
+    on('btn-over-retry', () => this.fade(() => this.startStage(this.stageIdx, true)));
+    on('btn-over-menu', () => this.fade(() => this.toMenu()));
     on('btn-full', () => { try { const d = document.documentElement, p = (d.requestFullscreen || d.webkitRequestFullscreen || (() => {})).call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} });
     document.addEventListener('visibilitychange', () => { if (document.hidden && this.state === 'play') this.togglePause(); });
   }
   show(id, on) { const e = $(id); if (e) e.classList.toggle('hidden', !on); }
+  fade(fn) { if (!window.RK) return fn(); if (this._fading) return; this._fading = true; RK.ui.transition(() => { this._fading = false; fn(); }); }
   showTitle() {
     this.state = 'title';
     ['hud', 'pause', 'clear', 'over'].forEach(i => this.show(i, false)); this.show('title', true);
     $('title-loading').classList.add('hidden');
+    if (window.RK) { RK.ui.mountSettings(document.querySelector('#title .title-inner'), $('btn-full')); RK.ui.mountSettings(document.querySelector('#pause .panel')); RK.music.play('title'); RK.ui.lowhp(false); }
+    let bst = {}; try { bst = JSON.parse(tryLS.get('rk2_best', '{}')) || {}; } catch (e) {}
     const box = $('stage-pick'); box.classList.remove('hidden'); box.innerHTML = '';
     const names = ['골목길', '공원', '강변', '야경 골목', '비 내리는 공원', '달빛 강변'];
     names.forEach((n, i) => {
       const b = document.createElement('button'); b.className = 'big-btn stage-btn' + (i + 1 > this.unlocked ? '' : '');
-      b.innerHTML = (i + 1 > this.unlocked ? '🔒 ' : '') + 'STAGE ' + (i + 1) + '<small>' + n + '</small>'; b.disabled = i + 1 > this.unlocked;
-      b.addEventListener('click', () => { Sfx.resume(); this.lives = 3; this.startStage(i, true); });
+      b.innerHTML = (i + 1 > this.unlocked ? '🔒 ' : '') + 'STAGE ' + (i + 1) + '<small>' + n + (bst[i] ? ' · ' + '★'.repeat(bst[i]) + '☆'.repeat(3 - bst[i]) : '') + '</small>'; b.disabled = i + 1 > this.unlocked;
+      b.addEventListener('click', () => { Sfx.resume(); this.fade(() => { this.lives = 3; this.startStage(i, true); }); });
       box.appendChild(b);
     });
   }
@@ -545,8 +554,9 @@ class Play extends Phaser.Scene {
     if (resetRun) { this.lives = Math.max(this.lives, 3); }
     this.buildStage(idx, false);
     this.hp = 3; this.stars = 0; this.apples = 3; this.state = 'play'; this.t0 = this.time.now; this.clockAcc = 0;
+    this._hp0 = null; this.fx2 = { sx: 1, sy: 1, vy: 0, was: true, run: 0, look: 80 };
     this.show('hud', true); this.updateHudStatic(); this.hudAll();
-    this.toast(this.S.name, 1600);
+    if (window.RK) { RK.ui.banner('STAGE ' + (idx + 1), this.S.name); RK.music.play(STAGE_MUSIC[idx] || 'day'); } else this.toast(this.S.name, 1600);
   }
   togglePause() {
     if (this.state === 'play') { this.state = 'pause'; this.show('pause', true); this.pausedAt = this.time.now; this.physics.world.pause(); }
@@ -603,7 +613,7 @@ class Play extends Phaser.Scene {
       else b.setVelocityX(approach(b.velocity.x, inp.ax * (inp.run ? cfg.run : cfg.walk), (grounded ? cfg.acc : cfg.air) * dt));
       if (grounded) this.coyote = .1; else this.coyote -= dt;
       if (inp.jump) this.jbuf = .12; else this.jbuf -= dt;
-      if (this.jbuf > 0 && this.coyote > 0) { b.setVelocityY(-cfg.jump); this.jbuf = 0; this.coyote = 0; Sfx.jump(); this.dust(sp.x, sp.y); }
+      if (this.jbuf > 0 && this.coyote > 0) { b.setVelocityY(-cfg.jump); this.jbuf = 0; this.coyote = 0; Sfx.jump(); this.dust(sp.x, sp.y); if (!m) { this.fx2.sx = .8; this.fx2.sy = 1.22; } }
       if (!inp.jumpHeld && b.velocity.y < -280) b.setVelocityY(b.velocity.y * .55 > -280 ? -280 : b.velocity.y * .55);
       sp.setFlipX(sp.face < 0);
     }
@@ -625,6 +635,15 @@ class Play extends Phaser.Scene {
       else h.anims.play('h_idle', true);
       if (inp.atk) this.throwApple(inp);
     }
+    // feel: squash & stretch, landing puff, run dust and a camera that looks where we are heading (no gameplay effect)
+    const fx = this.fx2;
+    if (!m) {
+      if (grounded && !fx.was && fx.vy > 330) { fx.sx = 1.22; fx.sy = .78; this.dust(sp.x, sp.y, 6); if (window.RK) RK.vibrate(10); }
+      const k = Math.min(1, dt * 14); fx.sx += (1 - fx.sx) * k; fx.sy += (1 - fx.sy) * k; h.setScale(.88 * fx.sx, .88 * fx.sy);
+      if (grounded && Math.abs(b.velocity.x) > 270) { fx.run -= dt; if (fx.run <= 0) { fx.run = .11; this.dust(sp.x - sp.face * 16, sp.y, 2); } } else fx.run = 0;
+    }
+    fx.was = grounded; fx.vy = b.velocity.y;
+    fx.look += ((sp.face || 1) * 80 - fx.look) * Math.min(1, dt * 2.2); this.cameras.main.setFollowOffset(-fx.look, 20);
     // blink when invulnerable
     const blink = this.invuln > 0 && Math.floor(this.time.now / 80) % 2 === 0;
     (m ? [h, m.sp] : [h]).forEach(o => o.setAlpha(blink ? .35 : 1));
@@ -659,7 +678,7 @@ class Play extends Phaser.Scene {
   openCage(c) {
     c.open = true; c.parts.forEach(p => { if (p !== c.creature) this.tweens.add({ targets: p, alpha: 0, y: p.y - 30, duration: 400, onComplete: () => p.destroy() }); });
     c.arrow.setVisible(false); const x = c.x; c.creature.destroy();
-    Sfx.mount(); this.burst(x, STAND - 80, 8); this.toast(c.m === 'elephant' ? '코끼리가 동료가 됐다!' : '독수리가 동료가 됐다!', 1400);
+    Sfx.mount(); if (window.RK) RK.vibrate(25); this.burst(x, STAND - 80, 8); this.toast(c.m === 'elephant' ? '코끼리가 동료가 됐다!' : '독수리가 동료가 됐다!', 1400);
     this.createMount(c.m, x, c.m === 'elephant' ? STAND : STAND - 120, true);
   }
   createMount(kind, x, y, ride) {
@@ -742,7 +761,7 @@ class Play extends Phaser.Scene {
   }
   startBoss() {
     const b = this.S.boss, e = this.bossSpec, K = BOSS_KINDS[b.kind || 'cat']; this.bossActive = true; this.bossBusy = true; this.bossName = K.name;
-    this.arenaWall = this.box(this.gSolid, b.arenaX, STAND - 200, 30, 900); this.toast(K.name + ' 등장!', 1700); Sfx.boss();
+    this.arenaWall = this.box(this.gSolid, b.arenaX, STAND - 200, 30, 900); if (window.RK) { RK.ui.banner('BOSS', K.name, 'boss', 2400); RK.music.play('boss'); RK.vibrate(80); } else this.toast(K.name + ' 등장!', 1700); Sfx.boss();
     let spr, tint;
     if (K.tex) { spr = this.physics.add.sprite(e.x, STAND, K.tex).setOrigin(.5, 1).setDepth(7.8); spr.setDisplaySize(spr.width * K.h / spr.height, K.h); spr.body.setSize(spr.width * .62, spr.height * .86).setOffset(spr.width * .19, spr.height * .14); tint = K.tint; }
     else { spr = this.physics.add.sprite(e.x, STAND, 'cat_walk', 0).setOrigin(.5, .93).setScale(1.0).setDepth(7.8); spr.play('cat_walk'); spr.body.setSize(86, 160).setOffset(68, 50); tint = 0xffb7a0; }
@@ -775,7 +794,7 @@ class Play extends Phaser.Scene {
     if (B.hp <= 0) this.bossDown();
   }
   bossDown() {
-    const B = this.boss; this.bossDefeated = true; this.bossBusy = false; this.show('boss-bar', false); Sfx.fanfare(); this.burst(B.spr.x, B.spr.y - 80, 16);
+    const B = this.boss; this.bossDefeated = true; this.bossBusy = false; this.show('boss-bar', false); Sfx.fanfare(); if (window.RK) { RK.music.play(STAGE_MUSIC[this.stageIdx] || 'day'); RK.vibrate([60, 40, 60]); } this.burst(B.spr.x, B.spr.y - 80, 16);
     this.toast(B.K.name + '을(를) 물리쳤다!', 1800); if (this.arenaWall) { this.arenaWall.destroy(); this.arenaWall = null; }
     this.tweens.add({ targets: [B.spr, B.crown], alpha: 0, y: '-=120', angle: 720, duration: 900, onComplete: () => { B.spr.destroy(); B.crown.destroy(); } }); B.spr.body.enable = false; this.boss = null;
     this.addStars(10, false); this.spawnItem({ k: 'heart', x: B.spr.x, y: STAND - B.spr.y + 90 });
@@ -817,13 +836,13 @@ class Play extends Phaser.Scene {
   }
   hurt(fromX, n) {
     if (this.invuln > 0 || this.dead || this.finished) return; const sp = this.active, m = this.mount;
-    this.invuln = 1.5; Sfx.hurt(); this.shake(140, .007);
+    this.invuln = 1.5; Sfx.hurt(); this.shake(140, .007); if (window.RK) { RK.ui.hurt(); RK.vibrate(45); }
     const dir = fromX == null ? -(sp.face || 1) : Math.sign(sp.x - fromX) || 1; sp.body.setVelocity(dir * 330, -420);
     if (m) { m.hp -= n; this.hudMount(); if (m.hp <= 0) { this.dismount(true); this.invuln = 1.5; } return; }
     this.hp -= n; this.hudHearts(); if (this.hp <= 0) this.die(false);
   }
   fellInPit() {
-    if (this.dead) return; Sfx.hurt();
+    if (this.dead) return; Sfx.hurt(); if (window.RK) { RK.ui.hurt(); RK.vibrate(60); }
     if (this.mount) { const mt = this.mount; this.mount = null; this.hero.setScale(.88).setAngle(0); this.hero.body.enable = true; this.cameras.main.startFollow(this.hero, true, .12, .1); mt.sp.destroy(); this.hudMount(); this.reopenCages(mt.kind); }
     this.hp -= 1; this.hudHearts();
     if (this.hp <= 0) { this.die(true); return; }
@@ -860,10 +879,10 @@ class Play extends Phaser.Scene {
     else if (k === 'letter') { const i = it.item.i; this.letters[i] = true; this.hudLetters(); Sfx.letter(); this.burst(it.x, it.y, 10); this.toast(it.item.ch + '!', 800); if (it.halo) it.halo.destroy(); if (this.letters.every(Boolean)) { this.lives++; this.hudLives(); this.time.delayedCall(700, () => { this.toast('라꿍이! 목숨 +1', 1500); Sfx.fanfare(); }); } }
     this.tweens.killTweensOf(it); this.gItem.remove(it); it.destroy();
   }
-  addStars(n, fx) { this.stars += n; this.stageStars += n; $('stars').textContent = this.stars; if (!fx) this.popText(this.active.x, this.active.y - 140, '★+' + n, '#ffe28a'); }
+  addStars(n, fx) { this.stars += n; this.stageStars += n; $('stars').textContent = this.stars; if (window.RK) RK.ui.bounce($('stars')); if (!fx) this.popText(this.active.x, this.active.y - 140, '★+' + n, '#ffe28a'); }
 
   stageClear() {
-    this.finished = true; this.state = 'clear'; Sfx.fanfare(); const h = this.hero; if (this.mount) this.dismount(); h.body.setVelocity(0, 0); h.anims.stop(); h.play('h_happy');
+    this.finished = true; this.state = 'clear'; Sfx.fanfare(); if (window.RK) { RK.ui.lowhp(false); RK.music.play('title'); RK.vibrate([40, 30, 40, 30, 80]); } const h = this.hero; if (this.mount) this.dismount(); h.body.setVelocity(0, 0); h.anims.stop(); h.play('h_happy');
     const secs = Math.round(this.clockAcc); const idx = this.stageIdx;
     if (idx + 2 > this.unlocked) { this.unlocked = Math.min(6, idx + 2); tryLS.set('rk2_unlocked', String(this.unlocked)); }
     this.time.delayedCall(1300, () => {
@@ -871,27 +890,46 @@ class Play extends Phaser.Scene {
       $('clear-badge').textContent = idx === 5 ? 'ALL CLEAR' : 'STAGE ' + (idx + 1) + ' CLEAR'; $('clear-title').textContent = idx === 5 ? '집에 도착했다!' : '스테이지 클리어!'; $('clear-quote').textContent = this.S.quote;
       $('res-stars').textContent = this.stageStars + '/' + this.stageTotalStars; $('res-letters').textContent = this.letters.filter(Boolean).length + '/3'; $('res-time').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0'); $('res-lives').textContent = Math.max(this.lives, 0);
       $('btn-next').textContent = idx === 5 ? '처음 화면으로' : '다음 스테이지';
+      this.showRating(idx);
       const cf = $('confetti'); cf.innerHTML = ''; for (let i = 0; i < 40; i++) { const s = document.createElement('span'); s.className = 'conf'; s.textContent = ['⭐', '🐾', '🦴', '🎉', '❤️'][i % 5]; s.style.left = Math.random() * 100 + '%'; s.style.animationDuration = 2 + Math.random() * 2.5 + 's'; s.style.animationDelay = Math.random() * .8 + 's'; cf.appendChild(s); }
     });
   }
 
+  showRating(idx) {
+    const tot = this.stageTotalStars || 1, got = this.stageStars, okS = got >= Math.ceil(tot * .7), okL = this.letters.every(Boolean), n = 1 + (okS ? 1 : 0) + (okL ? 1 : 0);
+    let best = {}; try { best = JSON.parse(tryLS.get('rk2_best', '{}')) || {}; } catch (e) {}
+    if ((best[idx] | 0) < n) { best[idx] = n; tryLS.set('rk2_best', JSON.stringify(best)); }
+    document.querySelectorAll('#clear-rating .rs').forEach((r, i) => {
+      r.classList.remove('on'); const ok = i === 0 || (i === 1 && okS) || (i === 2 && okL);
+      if (ok) setTimeout(() => { if (this.state === 'clear') { r.classList.add('on'); Sfx.star(); if (window.RK) RK.vibrate(15); } }, 550 + i * 380);
+    });
+    if (window.RK) RK.ui.countUp($('res-stars'), got, 900, v => v + '/' + tot);
+  }
+
   /* ----- fx & hud ----- */
   shake(ms, amp) { this.cameras.main.shake(ms, amp); }
-  dust(x, y) { for (let i = 0; i < 4; i++) { const d = this.add.image(x + (Math.random() - .5) * 30, y - 4, 'dot').setScale(.5).setAlpha(.5).setTint(0xe8d9b8).setDepth(9); this.tweens.add({ targets: d, x: d.x + (Math.random() - .5) * 60, y: d.y - 10 - Math.random() * 14, alpha: 0, scale: .1, duration: 380, onComplete: () => d.destroy() }); } }
+  dust(x, y, n = 4) { for (let i = 0; i < n; i++) { const d = this.add.image(x + (Math.random() - .5) * 30, y - 4, 'dot').setScale(.5).setAlpha(.5).setTint(0xe8d9b8).setDepth(9); this.tweens.add({ targets: d, x: d.x + (Math.random() - .5) * 60, y: d.y - 10 - Math.random() * 14, alpha: 0, scale: .1, duration: 380, onComplete: () => d.destroy() }); } }
   burst(x, y, n) { for (let i = 0; i < n; i++) { const s = this.add.image(x, y, 'item_star').setDisplaySize(20, 20).setDepth(10); const a = Math.random() * Math.PI * 2, d = 50 + Math.random() * 70; this.tweens.add({ targets: s, x: x + Math.cos(a) * d, y: y + Math.sin(a) * d - 20, alpha: 0, angle: 360, duration: 600, onComplete: () => s.destroy() }); } }
   popText(x, y, txt, col = '#fff6e4') { const t = this.add.text(x, y, txt, { fontFamily: 'Jua, sans-serif', fontSize: '28px', color: col, stroke: '#2a2140', strokeThickness: 5 }).setOrigin(.5).setDepth(11); this.tweens.add({ targets: t, y: y - 50, alpha: 0, duration: 800, onComplete: () => t.destroy() }); }
   toast(txt, ms = 1200) { const t = $('toast'); t.textContent = txt; t.classList.remove('hidden'); clearTimeout(this._tt); this._tt = setTimeout(() => t.classList.add('hidden'), ms); }
   updateHudStatic() { if ($('stage-name')) $('stage-name').textContent = this.S.name; }
   hudAll() { this.hudHearts(); this.hudLives(); this.hudApples(); this.hudLetters(); this.hudMount(); $('stars').textContent = this.stars; this.show('boss-bar', false); }
-  hudHearts() { const e = $('hearts'); let s = ''; for (let i = 0; i < this.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < this.hp ? '' : 'off'}" alt="">`; e.innerHTML = s; }
-  hudLives() { $('lives').textContent = '×' + Math.max(0, this.lives); }
-  hudApples() { $('apples').textContent = this.apples; }
+  hudHearts() { const e = $('hearts'); let s = ''; for (let i = 0; i < this.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < this.hp ? '' : 'off'}" alt="">`; e.innerHTML = s;
+    const prev = this._hp0 == null ? this.hp : this._hp0, im = e.children;
+    if (this.hp > prev && im[this.hp - 1]) im[this.hp - 1].classList.add('gain'); else if (this.hp < prev && im[this.hp]) im[this.hp].classList.add('lose');
+    this._hp0 = this.hp;
+    if (window.RK) RK.ui.lowhp(this.state === 'play' && this.hp > 0 && this.hp <= 1);
+  }
+  hudLives() { const t = '×' + Math.max(0, this.lives), el = $('lives'); if (el.textContent !== t) { el.textContent = t; if (window.RK && this.state === 'play') RK.ui.bounce(el); } }
+  hudApples() { const el = $('apples'); if (el.textContent !== String(this.apples)) { el.textContent = this.apples; if (window.RK && this.state === 'play') RK.ui.bounce(el); } }
   hudLetters() { document.querySelectorAll('#hud-letters .lt').forEach((e, i) => e.classList.toggle('on', !!this.letters[i])); }
   hudMount() {
     const m = this.mount, b = $('mount-badge'), hs = $('mount-hearts'); if (!m) { b.classList.add('hidden'); hs.innerHTML = ''; return; }
     b.classList.remove('hidden'); b.textContent = m.kind === 'elephant' ? '🐘 코끼리' : '🦅 독수리'; let s = ''; for (let i = 0; i < m.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < m.hp ? '' : 'off'}" alt="">`; hs.innerHTML = s;
   }
   updateWorldBits(dt) {
+    // stars drift toward the dog when close (feel only; the normal overlap still does the pickup)
+    if (!this.finished && !this.dead) { const sp0 = this.active; this.gItem.getChildren().forEach(it => { if (it.kind !== 'star' || !it.active) return; const dx = sp0.x - it.x, dy = sp0.y - 50 - it.y, d = Math.hypot(dx, dy); if (d < 150 && d > 2) { if (!it.mag) { it.mag = true; this.tweens.killTweensOf(it); } const k = Math.min(1, dt * (6 + (150 - d) / 10)); it.x += dx * k; it.y += dy * k; } }); }
     if (this.lantern) this.lantern.setPosition(this.active.x, this.active.y - 70);
     if (this.rain) for (const d of this.rain) { d.y += 780 * dt; d.x -= 140 * dt; if (d.y > H + 20) { d.y = -24; d.x = Math.random() * (W + 200); } }
     // hints

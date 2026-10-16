@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#1c1b33">
 <title>라꿍이의 집으로 가는 길</title>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="../shared/rk.css">
 </head>
 <body>
 <div id="stage">
@@ -39,6 +40,7 @@
 
   <!-- touch controls -->
   <div id="touch">
+    <div id="joy-zone"></div>
     <div id="joy"><div id="joy-knob"></div></div>
     <button id="tb-jump" class="tb" aria-label="점프">⤴<span>점프</span></button>
     <button id="tb-throw" class="tb" aria-label="사과 던지기"><img src="assets/item_apple.webp" alt=""><span>던지기</span></button>
@@ -53,7 +55,7 @@
       <div class="title-badge">SIDE-SCROLL ADVENTURE</div>
       <h1>라꿍이의<br><span>집으로 가는 길</span></h1>
       <p class="title-sub">길 잃은 라꿍이가 코끼리와 독수리를 타고<br>골목, 공원, 강변, 그리고 밤과 비의 길을 지나 집으로 돌아간다.</p>
-      <div id="title-loading">리소스 불러오는 중…</div>
+      <div id="title-loading"><span id="load-text">리소스 불러오는 중…</span><span class="rk-loadbar"><i id="load-fill"></i></span></div>
       <div id="stage-pick" class="hidden"></div>
       <div class="controls controls-touch"><span><b>왼쪽 조이스틱</b> 이동 (끝까지 밀면 달리기)</span><span><b>⤴</b> 점프</span><span><b>사과</b> 던지기</span><span><b>E</b> 타기·열기</span></div>
       <div class="controls controls-kb">
@@ -77,6 +79,7 @@
     <div class="panel wide">
       <div class="title-badge" id="clear-badge">STAGE CLEAR</div>
       <h2 id="clear-title">스테이지 클리어!</h2>
+      <div id="clear-rating"><div class="rs"><i>★</i><small>클리어</small></div><div class="rs"><i>★</i><small>별 70%↑</small></div><div class="rs"><i>★</i><small>글자 모두</small></div></div>
       <p class="quote" id="clear-quote"></p>
       <div class="stats">
         <div><span>별</span><b id="res-stars">0</b></div>
@@ -101,6 +104,7 @@
 </div>
 
 <script src="../lib/phaser.min.js"></script>
+<script src="../shared/rk.js"></script>
 <script src="game.js"></script>
 </body>
 </html>

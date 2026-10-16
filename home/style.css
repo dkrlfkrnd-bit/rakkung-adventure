@@ -170,3 +170,26 @@ body.touch #hint{top:30%;font-size:16px;padding:6px 14px}
   #clear .panel>.stats{justify-self:stretch}
   #clear .big-btn,#clear .big-btn.ghost{margin-top:0}
 }
+
+/* ===== polish ===== */
+#hearts img,#mount-hearts img{transition:filter .25s,opacity .25s}
+#hearts img.gain{animation:heartGain .55s cubic-bezier(.2,1.8,.4,1)}
+#hearts img.lose{animation:heartLose .5s ease-out}
+@keyframes heartGain{0%{transform:scale(.2)}60%{transform:scale(1.55)}100%{transform:scale(1)}}
+@keyframes heartLose{0%{transform:scale(1.55) rotate(-14deg);filter:brightness(2.4)}40%{transform:scale(.75) rotate(10deg)}100%{transform:scale(1)}}
+#clear-rating{display:flex;gap:18px;justify-content:center;margin:0 0 12px}
+#clear-rating .rs{display:flex;flex-direction:column;align-items:center;gap:2px}
+#clear-rating i{font-style:normal;font-size:50px;line-height:1;color:rgba(255,255,255,.16);transform:scale(.7);display:block}
+#clear-rating small{font-size:11px;color:rgba(255,246,228,.55);letter-spacing:.04em}
+#clear-rating .rs.on i{color:#ffcf5a;-webkit-text-stroke:2px #b5640c;text-shadow:0 0 22px rgba(255,207,90,.85);animation:starPop .65s cubic-bezier(.2,1.8,.4,1) both}
+#clear-rating .rs.on small{color:#ffe28a}
+@keyframes starPop{0%{transform:scale(.2) rotate(-50deg);opacity:0}60%{transform:scale(1.4) rotate(10deg);opacity:1}100%{transform:scale(1) rotate(0)}}
+#boss-bar:not(.hidden){animation:rkTitleIn .5s var(--rk-ease) both}
+#hint:not(.hidden){animation:rkScreenIn .25s ease-out}
+@media (max-height:480px) and (orientation:landscape){
+  #clear-rating{gap:12px;margin:0 0 6px}
+  #clear-rating i{font-size:30px}
+  #clear-rating small{font-size:9px}
+  .rk-settings{margin-top:5px;gap:6px}
+  .rk-settings .mode-btn{margin-top:0}
+}

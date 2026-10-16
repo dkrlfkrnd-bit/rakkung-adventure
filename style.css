@@ -238,3 +238,19 @@ body.touch .bb-name{font-size:12px}
 .btn-row{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap}
 .btn-row .big-btn.ghost{margin-top:0}
 #btn-load small{border:0;opacity:.75;font-size:13px}
+
+/* ===== polish ===== */
+.bar.hp .fill.ghost{position:absolute;left:0;top:0;background:rgba(255,255,255,.78);transition:width .7s ease .35s}
+.bar.hp #hp-fill{position:relative}
+#dlg-portrait.art{background:var(--pimg) center bottom/92% no-repeat,radial-gradient(circle at 35% 30%,#fff6e4,#ffd98a);font-size:0;color:transparent}
+#dlg-portrait.art.face{background:var(--pimg) center/cover no-repeat,radial-gradient(circle at 35% 30%,#fff6e4,#ffd98a)}
+@keyframes rkDlgIn{from{opacity:0;transform:translateX(-50%) translateY(18px) scale(.95)}to{opacity:1;transform:translateX(-50%)}}
+#dialog:not(.hidden){animation:rkDlgIn .3s var(--rk-ease) both}
+#objective{position:absolute;z-index:4;pointer-events:none;transform:translate(-50%,-50%);text-align:center}
+#objective .arr{display:block;font-size:34px;line-height:1;color:#ffcf5a;-webkit-text-stroke:2px #6b3fa0;filter:drop-shadow(0 4px 6px rgba(0,0,0,.5)) drop-shadow(0 0 10px rgba(255,207,90,.7))}
+#objective .lab{display:block;font-size:12px;color:#fff6e4;text-shadow:0 2px 0 rgba(0,0,0,.7);margin-top:2px}
+#objective .arr i{display:block;font-style:normal;transform-origin:50% 55%}
+#objective.here .arr{animation:objBob .7s ease-in-out infinite}
+@keyframes objBob{50%{transform:translateY(9px)}}
+#objective.hidden{display:none}
+#toast,#prompt{will-change:transform}
