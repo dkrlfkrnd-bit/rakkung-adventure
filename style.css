@@ -173,8 +173,17 @@ body.touch #toast{top:64px;font-size:15px;padding:7px 16px;max-width:88vw}
   body.touch #minimap{left:calc(max(10px,env(safe-area-inset-left)) + 214px);right:auto;top:max(10px,env(safe-area-inset-top));width:88px;height:66px}
 }
 @media (orientation:portrait){
-  body.touch #rotate-hint{display:flex;position:absolute;inset:0;z-index:50;background:rgba(14,10,30,.94);align-items:center;justify-content:center;text-align:center;font-size:24px;line-height:1.6}
-  body.touch #rotate-hint.hidden{display:flex!important}
+  body.touch:not(.portrait-ok) #rotate-hint{display:flex;position:absolute;inset:0;z-index:50;background:rgba(14,10,30,.94);align-items:center;justify-content:center;text-align:center;font-size:24px;line-height:1.6}
+  body.touch:not(.portrait-ok) #rotate-hint.hidden{display:flex!important}
+  body.touch.portrait-ok #rotate-hint{display:none!important}
+  #rotate-hint .mode-btn{margin-top:18px;font-size:16px;padding:10px 20px;pointer-events:auto}
+  /* portrait play: canvas sits in the middle, HUD above it, controls below it */
+  body.touch.portrait-ok #hud-mini-row{display:none}
+  body.touch.portrait-ok #hud-zone{left:10px;right:auto;transform:none;top:calc(max(10px,env(safe-area-inset-top)) + 72px);font-size:12px}
+  body.touch.portrait-ok #hud-mission{top:calc(max(10px,env(safe-area-inset-top)) + 112px);left:10px;right:10px;width:auto}
+  body.touch.portrait-ok #minimap{right:10px;top:calc(max(10px,env(safe-area-inset-top)) + 186px)}
+  body.touch.portrait-ok #toast{top:calc(max(10px,env(safe-area-inset-top)) + 280px)}
+  body.touch.portrait-ok #boss-bar{left:12px;transform:none;width:calc(100% - 24px);top:auto;bottom:calc(max(14px,env(safe-area-inset-bottom)) + 170px)}
 }
 @media (max-width:760px){
   .title-inner{padding:12px}

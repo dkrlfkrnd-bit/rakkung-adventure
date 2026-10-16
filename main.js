@@ -62,6 +62,7 @@ window.__touch ={ x: 0, y: 0, mag: 0, j: false, run: false, on: false, joyId: nu
     const full = $$('btn-full'); if (full) full.addEventListener('click', () => { try { const d = document.documentElement, p = (d.requestFullscreen || d.webkitRequestFullscreen || (() => {})).call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} });
     const orient = () => { const h = $$('rotate-hint'); h.classList.toggle('hidden', !(innerHeight > innerWidth)); };
     addEventListener('resize', orient); orient();
+    const pb = $$('btn-portrait'); if (pb) pb.addEventListener('click', () => { document.body.classList.add('portrait-ok'); orient(); const gg = g(); if (gg && gg.applyZoom) gg.applyZoom(); });
   });
 })();
 
@@ -203,7 +204,7 @@ class Game extends Phaser.Scene {
     this.initCombat();
     this.buildMinimap();
 
-    this.cameras.main.setZoom(window.__touch && window.__touch.on ? 0.82 : 1);
+    this.applyZoom(); if (!this._zoomBound) { this._zoomBound = true; addEventListener('resize', () => this.applyZoom()); }
     this.cameras.main.startFollow(this.camTarget, true, 0.09, 0.09);
     this.cameras.main.centerOn(this.camTarget.x, this.camTarget.y);
     this.setStage(0); this.updateHud(); this.bindDom();
@@ -627,6 +628,8 @@ class Game extends Phaser.Scene {
     kb.on('keydown', ev => { if (!ev.repeat) this.pressed[ev.code] = true; });
   }
   hit(code) { if (this.pressed && this.pressed[code]) { this.pressed[code] = false; return true; } return false; }
+  // phones: zoom out a little; portrait play: zoom in so the characters stay readable on the narrow canvas
+  applyZoom() { const on = window.__touch && window.__touch.on; let z = on ? 0.82 : 1; if (on && innerHeight > innerWidth) z = Math.max(0.82, Math.min(2.4, 0.42 / (innerWidth / 1280))); this.cameras.main.setZoom(z); }
 
   /* ===== minimap ===== */
   buildMinimap() {

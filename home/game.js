@@ -49,6 +49,7 @@ const T = { on: false, x: 0, y: 0, mag: 0, joyId: null, jumpHeld: false, jumpHit
     addEventListener('resize', orient); orient();
     if (!isTouch) return;
     T.on = true; document.body.classList.add('touch');
+    const pb = $('btn-portrait'); if (pb) pb.addEventListener('click', () => { document.body.classList.add('portrait-ok'); orient(); if (window.__home && window.__home.applyZoom) window.__home.applyZoom(); });
     document.addEventListener('contextmenu', e => e.preventDefault());
     const joy = $('joy'), knob = $('joy-knob'), R = 46;
     const move = e => { const r = joy.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2; let dx = e.clientX - cx, dy = e.clientY - cy; const l = Math.hypot(dx, dy) || 1, k = Math.min(1, l / R); T.x = dx / l * k; T.y = dy / l * k; T.mag = k; knob.style.transform = 'translate(' + (T.x * R) + 'px,' + (T.y * R) + 'px)'; };
@@ -282,6 +283,8 @@ class Play extends Phaser.Scene {
   toMenu() { this.state = 'title'; this.buildStage(0, true); this.showTitle(); }
 
   /* ----- stage building ----- */
+  // small screens: bigger characters (the ground stays at the bottom edge); portrait play zooms in further
+  applyZoom() { const small = T.on || innerWidth < 900; let z = small ? 1.22 : 1; if (small && innerHeight > innerWidth) z = Math.max(1.22, Math.min(2.6, 0.52 / (innerWidth / 1280))); this.cameras.main.setZoom(z); }
   teardown() {
     this.cols.forEach(c => c.destroy()); this.cols = [];
     this.objs.forEach(o => { try { o.destroy(); } catch (e) {} }); this.objs = [];
@@ -302,7 +305,7 @@ class Play extends Phaser.Scene {
     this.gApple = this.physics.add.group();
     this.physics.world.setBounds(0, -600, S.width, H + 1400);
     this.cameras.main.setBounds(0, 0, S.width, H);
-    this.cameras.main.setZoom(T.on || innerWidth < 900 ? 1.22 : 1);   // small screens: bigger characters (the ground stays at the bottom edge)
+    this.applyZoom(); if (!this._zoomBound) { this._zoomBound = true; addEventListener('resize', () => this.applyZoom()); }
 
     // background (mirrored so it tiles seamlessly) + ground strip cut from the same art
     const img = this.textures.get(S.bg).getSourceImage();

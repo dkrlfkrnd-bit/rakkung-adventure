@@ -120,8 +120,20 @@ body.touch #hint{top:30%;font-size:16px;padding:6px 14px}
   #stage-name{font-size:12px;padding:2px 12px}
 }
 @media (orientation:portrait){
-  body.touch #rotate-hint{display:flex;position:absolute;inset:0;z-index:50;background:rgba(14,10,30,.94);align-items:center;justify-content:center;text-align:center;font-size:24px;line-height:1.6}
-  body.touch #rotate-hint.hidden{display:flex!important}
+  body.touch:not(.portrait-ok) #rotate-hint{display:flex;position:absolute;inset:0;z-index:50;background:rgba(14,10,30,.94);align-items:center;justify-content:center;text-align:center;font-size:24px;line-height:1.6}
+  body.touch:not(.portrait-ok) #rotate-hint.hidden{display:flex!important}
+  body.touch.portrait-ok #rotate-hint{display:none!important}
+  #rotate-hint .mode-btn{margin-top:18px;font-size:16px;padding:10px 20px;pointer-events:auto}
+  body.touch.portrait-ok #hud-right{flex-wrap:wrap;max-width:140px;justify-content:flex-end;gap:6px}
+  body.touch.portrait-ok .hud-chip{font-size:15px;padding:2px 8px 2px 5px}
+  body.touch.portrait-ok .hud-chip img{width:20px;height:20px}
+  body.touch.portrait-ok #hud-hero{min-width:0;padding:5px 10px 5px 6px}
+  body.touch.portrait-ok #portrait{width:40px;height:40px}
+  body.touch.portrait-ok #hearts img{width:20px;height:18px}
+  body.touch.portrait-ok #stage-name{top:calc(max(10px,env(safe-area-inset-top)) + 138px);font-size:12px}
+  body.touch.portrait-ok #hint{top:calc(max(10px,env(safe-area-inset-top)) + 176px);font-size:14px}
+  body.touch.portrait-ok #toast{top:calc(max(10px,env(safe-area-inset-top)) + 252px);font-size:26px}
+  body.touch.portrait-ok #boss-bar{left:12px;transform:none;width:calc(100% - 24px);bottom:calc(max(14px,env(safe-area-inset-bottom)) + 200px)}
 }
 @media (max-width:760px){
   .title-inner{padding:12px}
