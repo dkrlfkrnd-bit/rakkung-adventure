@@ -223,6 +223,7 @@ class Game extends Phaser.Scene {
     const g = () => window.__game;
     $('btn-start').addEventListener('click', () => { const gg = g(); if (gg.readSave() && !confirm('저장된 진행을 지우고 처음부터 시작할까요?')) return; gg.startGame(false); });
     $('btn-load').addEventListener('click', () => g().startGame(true));
+    document.querySelectorAll('#ch-pick button').forEach(b => b.addEventListener('click', () => g().startFromChapter(+b.dataset.ch)));
     addEventListener('pagehide', () => g() && g().saveGame()); document.addEventListener('visibilitychange', () => { if (document.hidden && g()) g().saveGame(); });
     $('btn-resume').addEventListener('click', () => g().togglePause(false));
     $('btn-restart').addEventListener('click', () => g().restart());
@@ -747,7 +748,18 @@ class Game extends Phaser.Scene {
     else { lb.classList.add('hidden'); sb.classList.remove('ghost'); sb.innerHTML = '게임 시작 <small>Enter</small>'; }
   }
 
-  startGame(resume) {
+  /* start straight from a chapter, e.g. after losing a save (level and conquered zones are set to match the chapter) */
+  startFromChapter(ch) {
+    if (this.state !== 'title') return;
+    const cur = this.readSave();
+    if (ch <= 1) { if (cur && !confirm('저장된 진행을 지우고 처음부터 시작할까요?')) return; return this.startGame(false); }
+    if (cur && !confirm('저장된 진행(챕터 ' + this.chapterOf(cur.stage) + ' · Lv.' + cur.lvl + ')을 지우고\n챕터 ' + ch + '부터 시작할까요?')) return;
+    const P = { 2: { lvl: 4, stage: 5 }, 3: { lvl: 7, stage: 8 }, 4: { lvl: 9, stage: 11 } }[ch], XP = [0, 30, 70, 120, 180, 250, 330, 420, 520, 640], zones = {};
+    if (ch >= 3) zones.warehouse = zones.alley = 'rakkung'; if (ch >= 4) zones.park = 'rakkung';
+    const sv = { v: 2, t: Date.now(), stage: P.stage, side: 1, lvl: P.lvl, xp: XP[P.lvl - 1], score: 300 * (ch - 1), snacks: 0, kills: 6 * (ch - 1), cat3Down: 3, chDown: { 2: ch > 2 ? 5 : 0, 3: ch > 3 ? 6 : 0, 4: 0 }, chStarted: { 2: ch > 2, 3: ch > 3 }, mouseGift: false, pick: [], zones, gx: 13.5, gy: 13.5, tut: { bite: true, dash: true, bark: true } };
+    this.startGame(true, sv);
+  }
+  startGame(resume, sv0) {
     if (this.state !== 'title') return;
     Sfx.resume(); Sfx.ui();
     if (window.__touch && window.__touch.on) { try { const d = document.documentElement, p = (d.requestFullscreen || d.webkitRequestFullscreen || (() => {})).call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
@@ -756,7 +768,7 @@ class Game extends Phaser.Scene {
       $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
       this.state = 'play'; this.t0 = this.time.now; this._starting = false;
       if (window.RK) RK.music.play('town');
-      const sv = resume && this.readSave(); if (sv) { this.applySave(sv); return; }
+      const sv = sv0 || (resume && this.readSave()); if (sv) { this.applySave(sv); this.saveGame(); return; }
       this.clearSave(); this.setStage(1);
       if (window.RK) RK.ui.banner('CHAPTER 1', '새로운 보스의 등장');
       this.time.delayedCall(1300, () => this.say('여기가… 우리 구역이군.', 1800));

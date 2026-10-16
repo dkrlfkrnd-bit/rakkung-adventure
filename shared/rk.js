@@ -6,7 +6,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
 const SELF = document.currentScript && document.currentScript.src;
-const RK = window.RK = { build: '20261016c', sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
+const RK = window.RK = { build: '20261016d', sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
 const emit = () => RK.listeners.forEach(f => { try { f(); } catch (e) {} });
 
 /* ---------------- audio: one shared context, an SFX bus and a music bus behind a master gain ---------------- */
