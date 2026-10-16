@@ -16,14 +16,31 @@ window.RKCombat = {
     const ENEMY = {
       cat: { name: '캣 조직원', hp: 42, speed: 3.7, patrol: 1.3, sight: 6.5, dmg: 8, range: 1.15, windup: 420, cd: 1350, xp: 20, scale: 1.3, h: 138, char: 'cat' },
       dummy: { name: '훈련용 샌드백', hp: 80, inert: true, xp: 0, scale: 1.3 },
-      boss: { name: '돈 캣', boss: true, hp: 380, speed: 3.3, patrol: 1.0, sight: 99, dmg: 15, range: 1.7, windup: 650, cd: 1500, xp: 160, scale: 1.7, h: 215, char: 'cat', kbMul: .3 },
+      boss: { name: '돈 캣', boss: true, kit: 'cat', crown: '👑', hp: 380, speed: 3.3, patrol: 1.0, sight: 99, dmg: 15, range: 1.7, windup: 650, cd: 1500, xp: 160, scale: 1.7, h: 215, char: 'cat', kbMul: .3 },
+      // chapter 3 / 4 use the AutoSprite NPC art (pigeon / mouse) mirrored toward the hero, tinted so they read as gang members
+      pigeon: { name: '스카이 크루 조직원', hp: 34, speed: 4.2, patrol: 1.6, sight: 7, dmg: 7, range: 1.1, windup: 380, cd: 1200, xp: 24, h: 118, art: 'iso_npc_pigeon', tint: 0x9db4ff },
+      rat: { name: '언더그라운드 조직원', hp: 30, speed: 4.6, patrol: 1.6, sight: 7, dmg: 7, range: 1.0, windup: 340, cd: 1100, xp: 24, h: 104, art: 'iso_npc_mouse', tint: 0xcfa6ff },
+      boss_gugu: { name: '구구 대장', boss: true, kit: 'gugu', crown: '🎖️', hp: 440, speed: 3.9, patrol: 1.0, sight: 99, dmg: 16, range: 1.8, windup: 600, cd: 1400, xp: 190, h: 215, art: 'iso_npc_pigeon', tint: 0x9db4ff, kbMul: .3 },
+      boss_cheese: { name: '치즈 왕', boss: true, kit: 'cheese', crown: '🧀', hp: 500, speed: 3.0, patrol: 1.0, sight: 99, dmg: 17, range: 1.8, windup: 650, cd: 1500, xp: 230, h: 200, art: 'iso_npc_mouse', tint: 0xcfa6ff, kbMul: .25 },
+    };
+    // chapters 2-4: [start stage, boss stage, done stage]; soldiers must be beaten before the boss shows up
+    const CH = {
+      2: { stages: [6, 7, 8], zone: 'warehouse', before: 'cat', soldier: 'cat', n: 5, team: '캣 패밀리', mark: [28, 19], boss: 'boss', bossAt: [28, 18.5], flip: ['warehouse', 'alley'], xp: 100, score: 600,
+        spots: [[24, 18], [27.5, 17.2], [31, 18.4], [33.6, 17], [28.5, 19.6]], start: '챕터 2 시작! 캣 패밀리가 창고 지구를 점령했다 📍 미니맵 표시로 가자', bossToast: '보스 · 돈 캣 😾', rage: '돈 캣이 화났다! 부하들을 부른다 😾', done: '창고 지구와 골목 상점가를 되찾았다! 🏆',
+        intro: [['돈 캣', '😼', '…내 부하들을 이렇게 만들어놨냐옹.'], ['라꿍이', '🐶', '…네가 두목이군.'], ['돈 캣', '😼', '여긴 캣 패밀리 구역이다옹! 꼬리 짧은 강아지 따위가!'], ['라꿍이', '🐶', '(꼬리 얘기는 하지 마라.)']] },
+      3: { stages: [9, 10, 11], zone: 'park', before: 'pigeon', soldier: 'pigeon', n: 6, team: '스카이 크루', mark: [18, 31], boss: 'boss_gugu', bossAt: [18, 30.5], flip: ['park'], xp: 130, score: 800,
+        spots: [[10, 30], [14, 33], [18, 29], [23, 32], [27, 30], [31, 33]], start: '챕터 3 시작! 스카이 크루가 중앙공원을 점령했다 📍 미니맵 표시로 가자', bossToast: '보스 · 구구 대장 🦅', rage: '구구 대장이 날개를 펼친다! 부하 비둘기들이 몰려온다 🐦', done: '중앙공원을 되찾았다! 🏆',
+        intro: [['구구 대장', '🦅', '구구구… 내 부하들을 건드렸다고?'], ['라꿍이', '🐶', '…네가 스카이 크루 대장이군.'], ['구구 대장', '🦅', '하늘은 우리 거다, 땅강아지!'], ['라꿍이', '🐶', '(땅강아지는 또 처음 듣는다.)']] },
+      4: { stages: [12, 13, 14], zone: 'bakery', before: 'rat', soldier: 'rat', n: 6, team: '언더그라운드', mark: [7, 19], boss: 'boss_cheese', bossAt: [7, 18.5], flip: ['bakery', 'plaza'], xp: 160, score: 1000,
+        spots: [[3, 18], [6.5, 17.5], [10, 18.5], [13, 17], [8, 23.5], [12, 23.5]], start: '챕터 4 시작! 언더그라운드가 빵집 거리를 점령했다 📍 미니맵 표시로 가자', bossToast: '보스 · 치즈 왕 🧀', rage: '치즈 왕이 소리친다! 쥐 떼가 몰려온다 🐭', done: '빵집 거리와 중앙광장을 되찾았다! 도시는 이제 라꿍이의 것이다 🏆',
+        intro: [['치즈 왕', '🐭', '찍찍! 지하와 이 거리는 언더그라운드 왕국이다!'], ['라꿍이', '🐶', '…쥐가 왕이라니.'], ['치즈 왕', '🐭', '치즈 내놔! 안 내놓으면 물어버린다찍!'], ['라꿍이', '🐶', '(…치즈는 없다.)']] },
     };
     const ang = (dx, dy) => Math.atan2(dy, dx);
 
     Object.assign(Game.prototype, {
       /* ================= setup ================= */
       initCombat() {
-        this.lvl = 1; this.xp = 0; this.kills = 0; this.cat3Down = 0; this.cat6Down = 0;
+        this.lvl = 1; this.xp = 0; this.kills = 0; this.cat3Down = 0; this.chDown = { 2: 0, 3: 0, 4: 0 }; this.chStarted = {};
         this.calcStats(); this.hp = this.maxHp;
         this.cd = { bite: 0, dash: 0, bark: 0, crew: 0 };
         this.combo = 0; this.lastBite = -9999; this.atkLockUntil = 0; this.hurtLockUntil = 0; this.invulnUntil = 0; this.hitstopUntil = 0;
@@ -88,12 +105,13 @@ window.RKCombat = {
         e.sh = this.add.image(x, y, 'blob').setScale(.9, .8).setDepth(-3e5);
         e.sheet = !d.inert && d.char && this.anims.exists('npc_' + d.char + '_idle_down');
         if (e.sheet) { e.baseSc = d.h / this.npcman.chars[d.char].frameH; e.spr = this.add.sprite(x, y, d.char + '_idle_down').setOrigin(0.5, 0.97).setScale(e.baseSc); e.spr.play('npc_' + d.char + '_idle_down'); e.dir = 'down'; e.px = x; e.py = y; }
+        else if (d.art && this.textures.exists(d.art)) { e.art = true; e.baseSc = d.h / this.textures.get(d.art).getSourceImage().height; e.spr = this.add.image(x, y, d.art).setOrigin(0.5, 0.97).setScale(e.baseSc); if (d.tint) e.spr.setTint(d.tint); e.px = x; e.py = y; }
         else e.spr = this.add.image(x, y, d.inert ? 'dummy' : 'enemy_cat').setOrigin(0.5, 0.93).setScale(d.scale);
         e.barBg = this.add.rectangle(x, y, 46, 7, 0x1b1530).setDepth(99990).setStrokeStyle(1, 0xffffff, .5).setVisible(false);
         e.barFill = this.add.rectangle(x - 22, y, 44, 5, 0xff5a6e).setOrigin(0, .5).setDepth(99991).setVisible(false);
         e.mark = this.add.text(x, y, '!', { fontFamily: 'sans-serif', fontSize: '30px', fontStyle: 'bold', color: '#ff3b3b', stroke: '#fff', strokeThickness: 5 }).setOrigin(.5).setDepth(99992).setVisible(false);
         e.stars = this.add.image(x, y, 'star').setDepth(99992).setVisible(false);
-        if (d.boss) e.crown = this.add.text(x, y, '👑', { fontSize: '46px', fontFamily: '"Segoe UI Emoji","Apple Color Emoji",sans-serif' }).setOrigin(.5).setDepth(99992);
+        if (d.boss) e.crown = this.add.text(x, y, d.crown || '👑', { fontSize: '46px', fontFamily: '"Segoe UI Emoji","Apple Color Emoji",sans-serif' }).setOrigin(.5).setDepth(99992);
         this.enemies.push(e); return e;
       },
       spawnTrainingDummy() { if (this.dummy) return; this.dummy = this.spawnEnemy('dummy', 11, 13.6); this.toast('샌드백으로 기술을 연습하자!', 2500); },
@@ -101,27 +119,26 @@ window.RKCombat = {
         [[28.5, 12.5], [30.5, 13.8], [26.8, 15.6]].slice(0, n).forEach(([gx, gy], i) => this.spawnEnemy('cat', gx, gy, { tag: 'cat3' }));
       },
 
-      /* ================= chapter 2 : warehouse + boss ================= */
+      /* ================= chapters 2-4 : zone fight + boss ================= */
       freeSpot(gx, gy) { for (let r = 0; r < 6; r += .6) for (let a = 0; a < 6.3; a += .8) { const x = gx + Math.cos(a) * r, y = gy + Math.sin(a) * r; if (!this.blocked(x, y, .55)) return { gx: x, gy: y }; } return { gx, gy }; },
-      startChapter2(remaining = 5, silent = false) {
-        this.cat6Down = 5 - remaining; this.setStage(6);
-        const wz = this.zones.find(z => z.id === 'warehouse'); if (wz) { wz.owner = 'cat'; this.redrawMinimapBase(); }
-        [[24, 18], [27.5, 17.2], [31, 18.4], [33.6, 17], [28.5, 19.6]].slice(0, remaining).forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy('cat', p.gx, p.gy, { tag: 'cat6' }); });
-        if (!silent) { this.toast('챕터 2 시작! 캣 패밀리가 창고 지구를 점령했다 📍 미니맵 표시로 가자', 4200); Sfx.fanfare(); }
+      chapterInfo(ch) { return CH[ch]; },
+      chapterOf(stage) { return stage >= 12 ? 4 : stage >= 9 ? 3 : stage >= 6 ? 2 : 1; },
+      questMark() { for (const k in CH) { const C = CH[k]; if (this.stage === C.stages[0] || this.stage === C.stages[1]) return C.mark; } return null; },
+      startChapter(ch, remaining, silent) {
+        const C = CH[ch]; remaining = remaining == null ? C.n : remaining;
+        this.chDown[ch] = C.n - remaining; this.chStarted[ch] = true; this.setStage(C.stages[0]);
+        const z = this.zones.find(q => q.id === C.zone); if (z) { z.owner = C.before; this.redrawMinimapBase(); }
+        C.spots.slice(0, remaining).forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy(C.soldier, p.gx, p.gy, { tag: 'sold' + ch }); });
+        if (!silent) { this.toast(C.start, 4200); Sfx.fanfare(); }
       },
-      startBossIntro() {
-        this.setStage(7); Sfx.tone(120, .5, 'sawtooth', .08, 40);
-        this.time.delayedCall(900, () => {
-          const D = (who, icon, text) => ({ who, icon, text });
-          this.openDialog([
-            D('돈 캣', '😼', '…내 부하들을 이렇게 만들어놨냐옹.'), D('라꿍이', '🐶', '…네가 두목이군.'),
-            D('돈 캣', '😼', '여긴 캣 패밀리 구역이다옹! 꼬리 짧은 강아지 따위가!'), D('라꿍이', '🐶', '(꼬리 얘기는 하지 마라.)'),
-          ], () => this.spawnBoss());
-        });
+      startBossIntro(ch) {
+        const C = CH[ch]; this.setStage(C.stages[1]); Sfx.tone(120, .5, 'sawtooth', .08, 40);
+        this.time.delayedCall(900, () => this.openDialog(C.intro.map(([who, icon, text]) => ({ who, icon, text })), () => this.spawnBoss(ch)));
       },
-      spawnBoss() {
-        const p = this.freeSpot(28, 18.5), e = this.spawnEnemy('boss', p.gx, p.gy, { tag: 'boss' });
-        e.state = 'chase'; e.nextAtk = this.time.now + 1600; this.cameras.main.shake(300, .01); this.toast('보스 · 돈 캣 😾', 2200); Sfx.tone(100, .6, 'sawtooth', .1, 50);
+      spawnBoss(ch) {
+        const C = CH[ch], p = this.freeSpot(C.bossAt[0], C.bossAt[1]), e = this.spawnEnemy(C.boss, p.gx, p.gy, { tag: 'boss' }); e.ch = ch;
+        e.state = 'chase'; e.nextAtk = this.time.now + 1600; this.cameras.main.shake(300, .01); this.toast(C.bossToast, 2200); Sfx.tone(100, .6, 'sawtooth', .1, 50);
+        const nm = $('boss-name'); if (nm) nm.textContent = (e.d.crown || '👑') + ' ' + e.d.name;
         this.burst(sx(e.gx, e.gy), sy(e.gx, e.gy) - 80, ['💨', '⭐'], 8);
       },
       bossAI(e, time, dt, dist, toH, step) {
@@ -154,41 +171,44 @@ window.RKCombat = {
         }
       },
       bossChoose(e, time, dist, toH) {
-        const r = Math.random(); let atk;
-        if (dist < 2.4) atk = r < .55 ? 'swipe' : 'slam'; else if (dist < 7.5) atk = r < .5 ? 'charge' : r < .8 ? 'slam' : 'swipe'; else atk = 'charge';
+        const r = Math.random(), kit = e.d.kit; let atk;
+        if (kit === 'gugu') atk = dist < 2.2 ? (r < .45 ? 'swipe' : 'slam') : (r < .6 ? 'charge' : 'slam');                 // diving bird: lots of charges
+        else if (kit === 'cheese') atk = dist < 2.8 ? (r < .6 ? 'slam' : 'swipe') : (r < .55 ? 'slam' : 'charge');           // heavy king: slams
+        else { if (dist < 2.4) atk = r < .55 ? 'swipe' : 'slam'; else if (dist < 7.5) atk = r < .5 ? 'charge' : r < .8 ? 'slam' : 'swipe'; else atk = 'charge'; }
         if (atk === 'swipe' && dist > 3) atk = 'charge';
         e.atk = atk; e.state = 'windup'; e.windAt = time + { swipe: 650, slam: 1000, charge: 800 }[atk] * (e.phase2 ? .8 : 1);
-        e.warnR = { swipe: e.d.range + .5, slam: 3.6, charge: 1.1 }[atk];
+        e.warnR = { swipe: e.d.range + .5, slam: kit === 'cheese' ? 4 : 3.6, charge: 1.1 }[atk];
         const t = toH(); e.cdx = t.gx; e.cdy = t.gy; e.tgx = e.gx + t.gx * 7; e.tgy = e.gy + t.gy * 7;
-        if (atk === 'slam' && !this.slamHint) { this.slamHint = true; this.toast('내려찍기 예고! 점프(Space)로 피하자 ⬆', 2600); }
+        if (atk === 'slam' && !this.slamHint) { this.slamHint = true; this.toast('범위 공격 예고! 점프(Space)로 피하자 ⬆', 2600); }
         if (atk === 'charge' && !this.chargeHint) { this.chargeHint = true; this.toast('돌진 예고! 옆으로 피하자 ↔', 2400); }
         Sfx.tone(atk === 'slam' ? 90 : 160, .3, 'sawtooth', .07, 40);
       },
       bossStrike(e, time, toH) {
-        const d = e.d, h = this.hero, t = toH(), cdMul = e.phase2 ? .72 : 1;
+        const d = e.d, h = this.hero, t = toH(), cdMul = e.phase2 ? .72 : 1, kit = d.kit;
         if (e.atk === 'swipe') {
           this.moveEnt(e, t.gx * .7, t.gy * .7); this.addFx({ type: 'claw', gx: e.gx, gy: e.gy, tx: h.gx, ty: h.gy, t0: time, dur: 260 }); Sfx.noise(.12, .09, 1500);
           if (!this.dead && Math.hypot(h.gx - e.gx, h.gy - e.gy) < d.range + .6) this.hurtPlayer(d.dmg, e.gx, e.gy);
           e.state = 'recover'; e.recoverAt = time + 650; e.nextAtk = time + 1400 * cdMul;
         } else if (e.atk === 'slam') {
-          const x = sx(e.gx, e.gy), y = sy(e.gx, e.gy);
-          this.addFx({ type: 'ring', x, y, t0: time, dur: 560, R: 3.6 * TW / 2 * 1.42, color: 0xff6a4a, w: 10, iso: true });
+          const x = sx(e.gx, e.gy), y = sy(e.gx, e.gy), R = kit === 'cheese' ? 4 : 3.6, col = kit === 'gugu' ? 0x9fd0ff : kit === 'cheese' ? 0xffd34a : 0xff6a4a;
+          this.addFx({ type: 'ring', x, y, t0: time, dur: 560, R: R * TW / 2 * 1.42, color: col, w: 10, iso: true });
           this.cameras.main.shake(260, .012); Sfx.noise(.3, .1, 200); Sfx.tone(80, .3, 'square', .1, -30);
-          if (!this.dead && !this.jumping && Math.hypot(h.gx - e.gx, h.gy - e.gy) < 3.6) this.hurtPlayer(d.dmg + 8, e.gx, e.gy);
+          if (!this.dead && !this.jumping && Math.hypot(h.gx - e.gx, h.gy - e.gy) < R) this.hurtPlayer(d.dmg + 8, e.gx, e.gy);
           e.state = 'recover'; e.recoverAt = time + 900; e.nextAtk = time + 1700 * cdMul;
         } else { e.state = 'dash'; e.dashUntil = time + 640; e.dashHit = false; Sfx.noise(.3, .08, 500); Sfx.tone(200, .3, 'sawtooth', .06, 400); }
       },
       bossPhase2(e) {
-        this.toast('돈 캣이 화났다! 부하들을 부른다 😾', 2800); this.cameras.main.shake(300, .01); Sfx.tone(120, .5, 'sawtooth', .09, 60);
-        [[-2.5, 1], [1.5, -2.5]].forEach(([dx, dy]) => { const p = this.freeSpot(e.gx + dx, e.gy + dy), m = this.spawnEnemy('cat', p.gx, p.gy, { tag: 'minion' }); m.state = 'chase'; });
+        const C = CH[e.ch || 2]; this.toast(C.rage, 2800); this.cameras.main.shake(300, .01); Sfx.tone(120, .5, 'sawtooth', .09, 60);
+        const offs = e.d.kit === 'cheese' ? [[-2.5, 1], [1.5, -2.5], [2.5, 2]] : [[-2.5, 1], [1.5, -2.5]];
+        offs.forEach(([dx, dy]) => { const p = this.freeSpot(e.gx + dx, e.gy + dy), m = this.spawnEnemy(C.soldier, p.gx, p.gy, { tag: 'minion' }); m.state = 'chase'; });
       },
       onBossDown(e) {
-        this.setStage(8);
-        ['warehouse', 'alley'].forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; }); this.redrawMinimapBase();
+        const ch = e.ch || 2, C = CH[ch]; this.setStage(C.stages[2]);
+        C.flip.forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; }); this.redrawMinimapBase();
         for (const m of this.enemies) if (m !== e && m.state !== 'dead' && !m.d.inert) { m.hp = 0; m.stunUntil = 0; this.killEnemy(m); }
-        this.score += 600; this.addXp(100); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01);
-        this.toast('창고 지구와 골목 상점가를 되찾았다! 🏆', 4200);
-        this.time.delayedCall(2200, () => { if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(2); });
+        this.score += C.score; this.addXp(C.xp); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01);
+        this.toast(C.done, 4200);
+        this.time.delayedCall(2200, () => { if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(ch); });
       },
       refreshBossHud() {
         const B = this.enemies.find(x => x.d.boss && x.state !== 'dead'), bar = $('boss-bar'); if (!bar) return;
@@ -224,9 +244,10 @@ window.RKCombat = {
         this.score += 100; this.addXp(e.d.xp); this.updateHud();
         Sfx.tone(140, .25, 'sawtooth', .08, -60);
         if (e.crown) this.tweens.add({ targets: e.crown, y: e.crown.y - 70, alpha: 0, duration: 900, onComplete: () => e.crown.destroy() });
-        if (e.tag === 'cat6' && this.stage === 6) {
-          this.cat6Down++;
-          if (this.cat6Down >= 5) this.startBossIntro(); else { this.setStage(6); this.toast(`캣 패밀리 조직원 격파! (${this.cat6Down}/5)`, 1600); }
+        const sch = e.tag && String(e.tag).startsWith('sold') ? +String(e.tag).slice(4) : 0, SC = sch && CH[sch];
+        if (SC && this.stage === SC.stages[0]) {
+          this.chDown[sch]++;
+          if (this.chDown[sch] >= SC.n) this.startBossIntro(sch); else { this.setStage(SC.stages[0]); this.toast(`${SC.team} 조직원 격파! (${this.chDown[sch]}/${SC.n})`, 1600); }
         }
         if (e.d.boss) this.onBossDown(e);
         if (e.tag === 'cat3') {
@@ -304,10 +325,13 @@ window.RKCombat = {
             const key = 'npc_' + d.char + '_' + (moving ? 'walk' : 'idle') + '_' + e.dir;
             if (this.anims.exists(key) && e.spr.anims.currentAnim?.key !== key) e.spr.play(key, true);
             e.spr.setScale(e.baseSc * (wind ? 1.06 : 1), e.baseSc * crouch);
+          } else if (e.art) {
+            const mvx = x - e.px, mvy = y - e.py; e.px = x; e.py = y; const sxv = sx(h.gx, h.gy) - x; if (Math.abs(sxv) > 6 && e.state !== 'stunned') e.spr.setFlipX(sxv < 0);
+            e.spr.setScale(e.baseSc * (wind ? 1.06 : 1), e.baseSc * crouch); e.spr.y = y - (Math.hypot(mvx, mvy) > .3 ? Math.abs(Math.sin(time / 130 + e.id)) * 9 : 0);
           } else if (!d.inert) { const sxv = sx(h.gx, h.gy) - x; if (Math.abs(sxv) > 6 && e.state !== 'stunned') e.face = sxv > 0 ? 1 : -1; e.spr.setScale(d.scale * e.face * (wind ? 1.08 : 1), d.scale * crouch); }
-          if (e.flashUntil && time > e.flashUntil) { e.spr.clearTint(); e.flashUntil = 0; }
-          if (wind && !e.spr.isTinted) e.spr.setTint(0xff8888);
-          if (!wind && e.state !== 'stunned' && !e.flashUntil && e.spr.isTinted) e.spr.clearTint();
+          if (e.flashUntil && time > e.flashUntil) { e.spr.clearTint(); if (d.tint) e.spr.setTint(d.tint); e.flashUntil = 0; }
+          if (wind && !e.windT) { e.windT = true; e.spr.setTint(0xff8888); }
+          if (!wind && e.windT && !e.flashUntil) { e.windT = false; e.spr.clearTint(); if (d.tint) e.spr.setTint(d.tint); }
           e.sh.setPosition(x, y); if (e.crown) e.crown.setPosition(x, y - d.h - 14 + Math.sin(time / 200) * 3);
           const showBar = !d.boss && (e.hp < e.maxHp && e.state !== 'idle' || (e.d.inert && e.hp < e.maxHp) || (!d.inert && dist < 9 && e.state !== 'patrol'));
           e.barBg.setVisible(showBar).setPosition(x, y - 118); e.barFill.setVisible(showBar).setPosition(x - 22, y - 118).setSize(Math.max(0, 44 * e.hp / e.maxHp), 5);

@@ -196,11 +196,91 @@ function stage3() {
   E.push({ k: 'boss', x: 7000 });
   E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 4650 }, { k: 'check', x: 5900 });
   return { name: 'STAGE 3 · 강변', bg: 'bg_river', groundLine: 795, width: 7600, ground: [[0, 1400], [1600, 2800], [3000, 3600], [4600, 5600], [5800, 7600]], pit: 'water', spawn: 300, goalX: 7400, entities: E,
-    boss: { x: 7000, arenaX: 6150, arenaR: 7560 }, quote: '"드디어 집이다! 라꿍이는 따뜻한 집으로 돌아왔다."' };
+    boss: { x: 7000, arenaX: 6150, arenaR: 7560 }, quote: '"강변을 건넜지만… 해가 지고 밤이 왔다. 아직 집은 멀다."' };
 }
-const STAGES = [stage1, stage2, stage3];
+function stage4() {   // night alley
+  const E = [];
+  hint(E, 220, '밤이 됐다! 가로등 불빛을 따라 가자', '밤이 됐다! 가로등 불빛을 따라 가자');
+  hint(E, 3350, '새장 속 코끼리! E 로 열어서 구덩이를 건너 보자', '새장 속 코끼리! E 버튼으로 열어서 구덩이를 건너 보자');
+  E.push({ k: 'crate', x: 600 }, { k: 'dump', x: 1150 }, { k: 'barrel', x: 2150 }, { k: 'crate', x: 2550 }, { k: 'barrel', x: 3300 }, { k: 'crate', x: 3950 }, { k: 'dump', x: 4700 }, { k: 'crate', x: 5100 }, { k: 'barrel', x: 6100 });
+  E.push({ k: 'brick', x: 1000, y: 150, n: 3 }, { k: 'brick', x: 2200, y: 160, n: 2 }, { k: 'brick', x: 2650, y: 300, n: 2 }, { k: 'brick', x: 3900, y: 140, n: 3 }, { k: 'brick', x: 4650, y: 150, n: 3 }, { k: 'brick', x: 5700, y: 160, n: 3 }, { k: 'brick', x: 6250, y: 130, n: 2 });
+  E.push({ k: 'brick', x: 1565 - 35, y: 70, n: 1 }, { k: 'brick', x: 4150, y: 70, n: 2 }, { k: 'brick', x: 5365 - 35, y: 70, n: 1 });
+  E.push({ k: 'mover', x: 2955, y: 70, n: 2, dx: 70, dur: 3000, phase: 0 });
+  E.push({ k: 'spring', x: 2540 });
+  [[900, 150], [2000, 180], [2450, 200], [3800, 150], [4600, 200], [5000, 150], [6000, 200], [6500, 150]].forEach(([x, r]) => E.push({ k: 'cat', x, r }));
+  [[1250, 180], [2250, 160], [3500, 180], [4500, 180], [5900, 200]].forEach(([x, r]) => E.push({ k: 'mouse', x, r }));
+  [[1800, 320, 240], [2800, 300, 260], [3900, 300, 240], [5200, 330, 240], [6400, 310, 240]].forEach(([x, y, r]) => E.push({ k: 'pigeon', x, y, r }));
+  [800, 2300, 3200, 4800, 5000, 6700].forEach(x => E.push({ k: 'cone', x }));
+  [1000, 1900, 2500, 3300, 4500, 5100, 5800, 6300].forEach(x => E.push({ k: 'apple', x, y: 40 }));
+  E.push({ k: 'heart', x: 2700, y: 355 }, { k: 'heart', x: 4700, y: 205 }, { k: 'heart', x: 6300, y: 195 });
+  rowStars(E, 960, 235, 4); rowStars(E, 2170, 245, 3); rowStars(E, 2630, 365, 3); rowStars(E, 3870, 225, 3); rowStars(E, 4620, 235, 3); rowStars(E, 5670, 245, 3); rowStars(E, 700, 60, 3);
+  arcStars(E, 1480, 1720, 120, 70, 5); arcStars(E, 2880, 3170, 130, 80, 6); arcStars(E, 4080, 4370, 130, 80, 6); arcStars(E, 5280, 5520, 120, 70, 5);
+  E.push({ k: 'letter', x: 1105, y: 245, ch: '라', i: 0 }, { k: 'letter', x: 4005, y: 225, ch: '꿍', i: 1 }, { k: 'letter', x: 5805, y: 245, ch: '이', i: 2 });
+  E.push({ k: 'cage', x: 3600, m: 'elephant' });
+  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3200 }, { k: 'check', x: 4400 }, { k: 'check', x: 5600 });
+  return { name: 'STAGE 4 · 야경 골목', bg: 'bg_alley', groundLine: 720, width: 7000, ground: [[0, 1500], [1700, 2900], [3150, 4100], [4350, 5300], [5500, 7000]], pit: 'dark', spawn: 300, goalX: 6800, entities: E,
+    fx: { tint: 0x6270bb, lantern: true }, quote: '"밤의 골목도 지났다! 이제 비가 내리는 공원이다."' };
+}
+function stage5() {   // rainy park, boss: 구구 대장
+  const E = [];
+  hint(E, 220, '비가 온다! 미끄럽진 않지만 비둘기가 많아졌어', '비가 온다! 미끄럽진 않지만 비둘기가 많아졌어');
+  hint(E, 2250, '코끼리를 타면 비둘기도 한 방에 밟아 버려!', '코끼리를 타면 비둘기도 한 방에 밟아 버려!');
+  hint(E, 4450, '독수리를 타고 연못을 날아서 건너 보자 (↑ ↓ 로 높이 조절)', '독수리를 타고 연못을 날아서 건너 보자 (조이스틱 위·아래)');
+  hint(E, 6100, '"하늘은 우리 거다, 땅강아지!" — 스카이 크루 대장 구구 대장이 나타난다!', '"하늘은 우리 거다, 땅강아지!" — 스카이 크루 대장 구구 대장이 나타난다!');
+  E.push({ k: 'hedge', x: 700 }, { k: 'hedge', x: 2150 }, { k: 'hedge', x: 3600 }, { k: 'bench', x: 1200 }, { k: 'bench', x: 2750 }, { k: 'bench', x: 3900 }, { k: 'barrel', x: 600 }, { k: 'barrel', x: 3400 }, { k: 'barrel', x: 4600 });
+  E.push({ k: 'brick', x: 1000, y: 170, n: 3 }, { k: 'brick', x: 2300, y: 300, n: 2 }, { k: 'brick', x: 3250, y: 150, n: 3 }, { k: 'brick', x: 3800, y: 290, n: 2 }, { k: 'brick', x: 4430, y: 130, n: 2 });
+  E.push({ k: 'brick', x: 1565 - 35, y: 70, n: 1 }, { k: 'brick', x: 3065 - 35, y: 70, n: 1 }, { k: 'brick', x: 4265 - 35, y: 70, n: 1 });
+  [4900, 5160, 5420, 5680].forEach((x, i) => E.push({ k: 'brick', x, y: [70, 110, 70, 120][i], n: 2 }));
+  E.push({ k: 'spring', x: 2480 }, { k: 'spring', x: 3720 });
+  [[1000, 160], [2300, 200], [3500, 180]].forEach(([x, r]) => E.push({ k: 'cat', x, r }));
+  [[1250, 180], [2650, 180], [3800, 180], [4650, 120]].forEach(([x, r]) => E.push({ k: 'mouse', x, r }));
+  [[900, 320, 260], [1900, 300, 260], [2600, 330, 240], [3300, 310, 240], [4000, 320, 240], [4500, 300, 200], [5000, 280, 400], [5600, 300, 400]].forEach(([x, y, r]) => E.push({ k: 'pigeon', x, y, r }));
+  [750, 1700, 2800, 3500, 4550].forEach(x => E.push({ k: 'cone', x }));
+  [1050, 1850, 2600, 3300, 3700, 4500, 4700, 6000, 6250, 6450].forEach(x => E.push({ k: 'apple', x, y: 40 }));
+  E.push({ k: 'heart', x: 2350, y: 365 }, { k: 'heart', x: 3300, y: 215 }, { k: 'heart', x: 4480, y: 195 }, { k: 'heart', x: 6050, y: 50 });
+  rowStars(E, 960, 235, 4); rowStars(E, 2270, 365, 3); rowStars(E, 3220, 215, 4); rowStars(E, 3770, 355, 3); rowStars(E, 4400, 195, 3); rowStars(E, 700, 55, 3);
+  arcStars(E, 1480, 1720, 120, 70, 5); arcStars(E, 2980, 3220, 120, 70, 5); arcStars(E, 4190, 4430, 120, 70, 5); arcStars(E, 4800, 5900, 190, 120, 15);
+  E.push({ k: 'letter', x: 1105, y: 260, ch: '라', i: 0 }, { k: 'letter', x: 3855, y: 355, ch: '꿍', i: 1 }, { k: 'letter', x: 5300, y: 245, ch: '이', i: 2 });
+  E.push({ k: 'cage', x: 2350, m: 'elephant' }, { k: 'cage', x: 4600, m: 'eagle' });
+  E.push({ k: 'boss', x: 7100 });
+  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3200 }, { k: 'check', x: 4420 }, { k: 'check', x: 6000 });
+  return { name: 'STAGE 5 · 비 내리는 공원', bg: 'bg_park', groundLine: 735, width: 7600, ground: [[0, 1500], [1700, 3000], [3200, 4200], [4400, 4800], [5900, 7600]], pit: 'water', spawn: 300, goalX: 7420, entities: E,
+    boss: { kind: 'pigeon', x: 7100, arenaX: 6200, arenaR: 7560 }, fx: { tint: 0x93a1c8, rain: true, noFlies: true }, quote: '"스카이 크루 대장 구구를 쓰러뜨렸다! 마지막은 달빛 강변이다."' };
+}
+function stage6() {   // moonlit river, boss: 치즈 왕
+  const E = [];
+  hint(E, 220, '마지막 스테이지! 달빛 아래 강변을 건너 집으로', '마지막 스테이지! 달빛 아래 강변을 건너 집으로');
+  hint(E, 3350, '독수리를 타면 강을 단숨에 건널 수 있어', '독수리를 타면 강을 단숨에 건널 수 있어');
+  hint(E, 5250, '코끼리를 타고 돌진(J)하면 치즈 왕도 문제없어!', '코끼리를 타고 돌진(사과 버튼)하면 치즈 왕도 문제없어!');
+  hint(E, 6500, '"치즈 내놔! 안 내놓으면 물어버린다찍!" — 치즈 왕이 길을 막는다!', '"치즈 내놔! 안 내놓으면 물어버린다찍!" — 치즈 왕이 길을 막는다!');
+  E.push({ k: 'dump', x: 700 }, { k: 'barrel', x: 1100 }, { k: 'crate', x: 2000 }, { k: 'bench', x: 2450 }, { k: 'dump', x: 3550 }, { k: 'barrel', x: 5150 }, { k: 'crate', x: 5500 });
+  E.push({ k: 'brick', x: 1200, y: 150, n: 3 }, { k: 'brick', x: 2250, y: 160, n: 3 }, { k: 'brick', x: 2850 - 140, y: 300, n: 2 }, { k: 'brick', x: 5050, y: 150, n: 3 });
+  E.push({ k: 'brick', x: 1500 - 35, y: 70, n: 1 }, { k: 'brick', x: 2800 - 35, y: 70, n: 1 }, { k: 'brick', x: 5800 - 35, y: 70, n: 1 });
+  E.push({ k: 'mover', x: 3780, y: 80, n: 2, dx: 110, dur: 3400, phase: 0 }, { k: 'mover', x: 4040, y: 110, n: 2, dx: 110, dur: 3200, phase: .5 }, { k: 'mover', x: 4300, y: 80, n: 2, dx: 110, dur: 3300, phase: .25 }, { k: 'mover', x: 4560, y: 110, n: 2, dx: 110, dur: 3500, phase: .75 });
+  E.push({ k: 'spring', x: 2030 }, { k: 'spring', x: 6850 });
+  [[800, 200], [2200, 250], [3300, 150], [5100, 200], [5500, 150]].forEach(([x, r]) => E.push({ k: 'cat', x, r }));
+  [[1000, 180], [2450, 200], [5250, 200], [3500, 140]].forEach(([x, r]) => E.push({ k: 'mouse', x, r }));
+  [[1200, 320, 260], [2400, 300, 260], [3400, 320, 200], [4200, 280, 500], [5200, 300, 240], [5600, 320, 200]].forEach(([x, y, r]) => E.push({ k: 'pigeon', x, y, r }));
+  [600, 1800, 2650, 5050, 5700].forEach(x => E.push({ k: 'cone', x }));
+  [900, 1900, 2600, 3200, 5000, 5400, 6050, 6350, 6550].forEach(x => E.push({ k: 'apple', x, y: 40 }));
+  E.push({ k: 'heart', x: 2400, y: 215 }, { k: 'heart', x: 5100, y: 215 }, { k: 'heart', x: 6100, y: 50 });
+  rowStars(E, 1150, 215, 3); rowStars(E, 2220, 225, 4); rowStars(E, 2740, 365, 3); rowStars(E, 5020, 215, 4); rowStars(E, 700, 60, 3);
+  arcStars(E, 1380, 1620, 120, 70, 5); arcStars(E, 2680, 2920, 120, 70, 5); arcStars(E, 5680, 5920, 120, 70, 5); arcStars(E, 3700, 4900, 170, 130, 14);
+  E.push({ k: 'letter', x: 1300, y: 250, ch: '라', i: 0 }, { k: 'letter', x: 2355, y: 255, ch: '꿍', i: 1 }, { k: 'letter', x: 5155, y: 245, ch: '이', i: 2 });
+  E.push({ k: 'cage', x: 3400, m: 'eagle' }, { k: 'cage', x: 5300, m: 'elephant' });
+  E.push({ k: 'boss', x: 7500 });
+  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 5000 }, { k: 'check', x: 6150 });
+  return { name: 'STAGE 6 · 달빛 강변', bg: 'bg_river', groundLine: 795, width: 8200, ground: [[0, 1400], [1600, 2700], [2900, 3700], [4900, 5700], [5900, 8200]], pit: 'water', spawn: 300, goalX: 7950, entities: E,
+    boss: { kind: 'mouse', x: 7500, arenaX: 6400, arenaR: 8060 }, fx: { tint: 0x5a68b0, lantern: true }, quote: '"드디어 집이다! 라꿍이는 따뜻한 집으로 돌아왔다."' };
+}
+const STAGES = [stage1, stage2, stage3, stage4, stage5, stage6];
 
 /* ---------- Boot ---------- */
+const BOSS_KINDS = {
+  cat: { name: '돈 캣', crown: '👑', hp: 10 },
+  pigeon: { name: '구구 대장', crown: '🎖️', hp: 12, tex: 'npc_pigeon', h: 190, tint: 0x9db4ff, minion: 'pigeon', leapV: -1050, chargeV: 560, rage: '구구 대장이 날개를 펼친다! 부하 비둘기들이 날아온다 🐦' },
+  mouse: { name: '치즈 왕', crown: '🧀', hp: 14, tex: 'npc_mouse', h: 170, tint: 0xcfa6ff, minion: 'mouse', leapV: -820, chargeV: 430, shock: true, rage: '치즈 왕이 소리친다! 쥐 떼가 몰려온다 🐭' },
+};
 const HERO_ACTS = ['idle', 'walk', 'run', 'jump', 'bite', 'ko', 'happy'];
 class Boot extends Phaser.Scene {
   constructor() { super('boot'); }
@@ -228,7 +308,7 @@ class Play extends Phaser.Scene {
     this.state = 'title'; this.t0 = 0; this.clock = 0;
     this.lives = 3; this.hp = 3; this.maxHp = 5; this.stars = 0; this.apples = 3; this.letters = [false, false, false];
     this.stageStars = 0; this.stageTotalStars = 0;
-    this.unlocked = clamp(parseInt(tryLS.get('rk2_unlocked', '1'), 10) || 1, 1, 3);
+    this.unlocked = clamp(parseInt(tryLS.get('rk2_unlocked', '1'), 10) || 1, 1, 6);
     this.mkAnims(); this.mkTextures();
     this.cols = []; this.objs = [];
     this.physics.world.setBoundsCollision(true, true, false, false);
@@ -250,6 +330,7 @@ class Play extends Phaser.Scene {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
     g.fillStyle(0xffffff, 1); g.fillCircle(8, 8, 8); g.generateTexture('dot', 16, 16); g.clear();
     g.fillStyle(0xfff2b0, 1); g.fillCircle(6, 6, 6); g.generateTexture('glow', 12, 12); g.destroy();
+    const sl = this.textures.createCanvas('softlight', 256, 256), c2 = sl.getContext(), gr = c2.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c2.fillStyle = gr; c2.fillRect(0, 0, 256, 256); sl.refresh();
   }
 
   /* ----- DOM wiring ----- */
@@ -259,7 +340,7 @@ class Play extends Phaser.Scene {
     on('btn-resume', () => this.togglePause());
     on('btn-retry', () => this.startStage(this.stageIdx, true));
     on('btn-menu', () => this.toMenu());
-    on('btn-next', () => { if (this.stageIdx < 2) this.startStage(this.stageIdx + 1, false); else this.toMenu(); });
+    on('btn-next', () => { if (this.stageIdx < 5) this.startStage(this.stageIdx + 1, false); else this.toMenu(); });
     on('btn-again', () => this.startStage(this.stageIdx, true));
     on('btn-over-retry', () => this.startStage(this.stageIdx, true));
     on('btn-over-menu', () => this.toMenu());
@@ -272,7 +353,7 @@ class Play extends Phaser.Scene {
     ['hud', 'pause', 'clear', 'over'].forEach(i => this.show(i, false)); this.show('title', true);
     $('title-loading').classList.add('hidden');
     const box = $('stage-pick'); box.classList.remove('hidden'); box.innerHTML = '';
-    const names = ['골목길', '공원', '강변'];
+    const names = ['골목길', '공원', '강변', '야경 골목', '비 내리는 공원', '달빛 강변'];
     names.forEach((n, i) => {
       const b = document.createElement('button'); b.className = 'big-btn stage-btn' + (i + 1 > this.unlocked ? '' : '');
       b.innerHTML = (i + 1 > this.unlocked ? '🔒 ' : '') + 'STAGE ' + (i + 1) + '<small>' + n + '</small>'; b.disabled = i + 1 > this.unlocked;
@@ -315,7 +396,11 @@ class Play extends Phaser.Scene {
     const gt = this.textures.createCanvas('gnd', 2048, 160); gt.getContext().drawImage(bt.getCanvas(), 0, S.groundLine, 2048, 160, 0, 0, 2048, 160); gt.refresh();
     this.bg = this.add2(this.add.tileSprite(0, 0, W, H, 'bgm').setOrigin(0).setScrollFactor(0), 0);
     this.bg.tilePositionY = S.groundLine - FLOOR;
-    this.sun = null;
+    this.sun = null; this.lantern = null; this.rain = null;
+    if (S.fx) {
+      if (S.fx.lantern) this.lantern = this.add2(this.add.image(0, 0, 'softlight').setScale(3.6).setAlpha(.6).setTint(0xffe0a8).setBlendMode(Phaser.BlendModes.ADD).setDepth(8.4), 8.4);
+      if (S.fx.rain) { this.rain = []; for (let i = 0; i < 90; i++) this.rain.push(this.add2(this.add.rectangle(Math.random() * (W + 200), Math.random() * H, 2, 18, 0xcfe3ff, .42).setScrollFactor(0).setDepth(16).setAngle(10), 16)); }
+    }
 
     // ground + pits
     S.ground.forEach(([a, b]) => {
@@ -323,7 +408,7 @@ class Play extends Phaser.Scene {
       this.box(this.gGround, (a + b) / 2, STAND + 150, b - a, 300);
     });
     for (let i = 0; i < S.ground.length - 1; i++) this.makePit(S.ground[i][1], S.ground[i + 1][0], S.pit);
-    this.makeFireflies(S.width);
+    if (!(S.fx && S.fx.noFlies)) this.makeFireflies(S.width);
 
     // entities
     this.stageTotalStars = 0; this.stageStars = 0;
@@ -335,13 +420,18 @@ class Play extends Phaser.Scene {
     this.goalGlow = this.add2(this.add.image(gx, STAND - 90, 'glow').setScale(16).setAlpha(.18).setBlendMode(Phaser.BlendModes.ADD), 3);
     this.tweens.add({ targets: this.goalGlow, alpha: .32, scale: 19, duration: 1200, yoyo: true, repeat: -1 });
 
+    if (S.fx && S.fx.tint) {   // night / rain: tint the scenery only, so the characters stay bright
+      const t = S.fx.tint; this.bg.setTint(t);
+      this.objs.forEach(o => { if (o.setTint && (o.type === 'TileSprite' || (o.type === 'Image' && o.depth >= 4 && o.depth <= 5))) o.setTint(t); });
+      this.goalSpr.clearTint();
+    }
     this.buildHero(S.spawn);
     this.cp = { x: S.spawn, i: -1 };
     this.addColliders(this.hero);
     this.cols.push(this.physics.add.collider(this.gEnemy, this.gGround), this.physics.add.collider(this.gEnemy, this.gSolid));
     this.cameras.main.startFollow(this.hero, true, 0.12, 0.1); this.cameras.main.setFollowOffset(-80, 20);
     this.cameras.main.scrollX = clamp(S.spawn - W / 2, 0, S.width - W);
-    this.bossDefeated = !S.boss; this.bossActive = false; this.arenaWall = null;
+    this.bossDefeated = !S.boss; this.bossActive = false; this.arenaWall = null; this.bossName = '';
     this.letters = [false, false, false]; this.invuln = 0; this.coyote = 0; this.jbuf = 0; this.atkCd = 0; this.dead = false; this.finished = false;
     this.updateHudStatic();
   }
@@ -615,12 +705,12 @@ class Play extends Phaser.Scene {
       } else if (en.k === 'mouse') {
         en.hop -= dt; if (s.body.blocked.down && en.hop <= 0) { s.body.setVelocityY(-340); en.hop = .9 + Math.random() * .7; }
         if (s.x < en.x0) en.dir = 1; else if (s.x > en.x1) en.dir = -1;
-        s.body.setVelocityX(en.hurtT > 0 ? (en.kb || 0) : en.dir * en.speed); s.setFlipX(en.dir > 0);
+        s.body.setVelocityX(en.hurtT > 0 ? (en.kb || 0) : en.dir * en.speed); s.setFlipX(en.dir < 0);
       } else if (en.k === 'pigeon') {
         en.t += dt; const near = Math.abs(hx - s.x) < 260 && hy > s.y + 40;
         if (en.mode === 'hover') {
           s.x += en.dir * en.speed * dt; if (s.x < en.x0) en.dir = 1; if (s.x > en.x1) en.dir = -1;
-          s.y = en.y0 + Math.sin(en.t * 2.2 + en.phase) * 24; s.setFlipX(en.dir > 0);
+          s.y = en.y0 + Math.sin(en.t * 2.2 + en.phase) * 24; s.setFlipX(en.dir < 0);
           if (near && en.t > 1.5) { en.mode = 'dive'; en.tx = hx; en.ty = hy - 40; en.t = 0; }
         } else if (en.mode === 'dive') {
           const dx = en.tx - s.x, dy = en.ty - s.y, l = Math.hypot(dx, dy) || 1; s.x += dx / l * 380 * dt; s.y += dy / l * 380 * dt; if (l < 20 || en.t > 1.1) { en.mode = 'rise'; en.t = 0; }
@@ -647,29 +737,36 @@ class Play extends Phaser.Scene {
   dropApple(x, y) { const e = { k: 'apple', x, y: STAND - y }; this.spawnItem(e); }
 
   /* ----- boss ----- */
+  spawnShocks(x) {   // mouse king: ground shockwaves, jump over them
+    [-1, 1].forEach(d => { const z = this.add.rectangle(x + d * 50, STAND - 14, 52, 28, 0xffd34a, .92).setDepth(7.6); this.physics.add.existing(z); this.gHaz.add(z); z.body.setAllowGravity(false); z.body.setVelocityX(d * 520); this.objs.push(z); this.time.delayedCall(1300, () => { if (z.active) z.destroy(); }); });
+  }
   startBoss() {
-    const b = this.S.boss, e = this.bossSpec; this.bossActive = true; this.bossBusy = true;
-    this.arenaWall = this.box(this.gSolid, b.arenaX, STAND - 200, 30, 900); this.physics.add.collider; this.toast('돈 캣이 나타났다!', 1500); Sfx.boss();
-    const spr = this.physics.add.sprite(e.x, STAND, 'cat_walk', 0).setOrigin(.5, .93).setScale(1.0).setDepth(7.8); spr.play('cat_walk'); spr.setTint(0xffb7a0); spr.body.setSize(86, 160).setOffset(68, 50);
-    const crown = this.add2(this.add.text(0, 0, '👑', { fontSize: '40px' }).setOrigin(.5), 8);
+    const b = this.S.boss, e = this.bossSpec, K = BOSS_KINDS[b.kind || 'cat']; this.bossActive = true; this.bossBusy = true; this.bossName = K.name;
+    this.arenaWall = this.box(this.gSolid, b.arenaX, STAND - 200, 30, 900); this.toast(K.name + ' 등장!', 1700); Sfx.boss();
+    let spr, tint;
+    if (K.tex) { spr = this.physics.add.sprite(e.x, STAND, K.tex).setOrigin(.5, 1).setDepth(7.8); spr.setDisplaySize(spr.width * K.h / spr.height, K.h); spr.body.setSize(spr.width * .62, spr.height * .86).setOffset(spr.width * .19, spr.height * .14); tint = K.tint; }
+    else { spr = this.physics.add.sprite(e.x, STAND, 'cat_walk', 0).setOrigin(.5, .93).setScale(1.0).setDepth(7.8); spr.play('cat_walk'); spr.body.setSize(86, 160).setOffset(68, 50); tint = 0xffb7a0; }
+    spr.setTint(tint);
+    const crown = this.add2(this.add.text(0, 0, K.crown, { fontSize: '40px' }).setOrigin(.5), 8);
     this.cols.push(this.physics.add.collider(spr, this.gGround), this.physics.add.collider(spr, this.gSolid));
-    this.boss = { spr, crown, hp: 10, maxHp: 10, state: 'idle', t: 1.2, dir: -1, invul: 0, en: { k: 'boss', spr, dead: false } };
-    this.objs.push(spr); this.show('boss-bar', true); $('boss-fill').style.width = '100%';
+    this.boss = { spr, crown, K, tint, hp: K.hp, maxHp: K.hp, state: 'idle', t: 1.2, dir: -1, invul: 0, summoned: false, en: { k: 'boss', spr, dead: false } };
+    this.objs.push(spr); this.show('boss-bar', true); $('boss-fill').style.width = '100%'; const bn = document.querySelector('#boss-bar .bb-name'); if (bn) bn.textContent = K.crown + ' ' + K.name;
   }
   updateBoss(dt) {
     const S = this.S; if (!S.boss) return; const sp = this.active;
     if (!this.bossActive && !this.bossDefeated && sp.x > S.boss.arenaX + 340) this.startBoss();
-    const B = this.boss; if (!B) return; const s = B.spr; B.invul = Math.max(0, B.invul - dt); B.crown.setPosition(s.x + (s.flipX ? -6 : 6), s.y - 200);
+    const B = this.boss; if (!B) return; const s = B.spr, K = B.K; B.invul = Math.max(0, B.invul - dt); B.crown.setPosition(s.x + (s.flipX ? -6 : 6), s.y - (K.tex ? K.h : 200) - (K.tex ? 16 : 0));
+    if (!B.summoned && B.hp <= B.maxHp / 2 && B.hp > 0) { B.summoned = true; this.toast(K.rage || (K.name + '이 화났다!'), 2600); this.shake(300, .01); if (K.minion) for (let i = 0; i < (K.minion === 'mouse' ? 3 : 2); i++) { const x = clamp(s.x + (i % 2 ? 1 : -1) * (260 + i * 120), this.S.boss.arenaX + 120, this.S.boss.arenaR - 120); this.spawnEnemy({ k: K.minion, x, y: 320, r: 220 }); } }
     s.setAlpha(B.invul > 0 && Math.floor(this.time.now / 70) % 2 ? .45 : 1);
     const toHero = sp.x - s.x; B.t -= dt;
     if (B.state === 'idle') { s.body.setVelocityX(Math.sign(toHero) * 90); B.dir = Math.sign(toHero) || B.dir; if (B.t <= 0) { B.state = 'tele'; B.t = .65; s.body.setVelocityX(0); B.dir = Math.sign(toHero) || B.dir; } }
-    else if (B.state === 'tele') { s.x += Math.sin(this.time.now / 25) * 1.6; if (B.t <= 0) { B.state = Math.random() < .35 ? 'leap' : 'charge'; B.t = B.state === 'charge' ? 1.5 : .01; if (B.state === 'leap') { s.body.setVelocityY(-900); s.body.setVelocityX(clamp(toHero * 1.15, -460, 460)); B.t = 1.2; } } }
-    else if (B.state === 'charge') { s.body.setVelocityX(B.dir * 500); if (s.x < this.S.boss.arenaX + 80 || s.x > this.S.boss.arenaR - 80 || B.t <= 0) { B.state = 'stun'; B.t = 1.6; s.body.setVelocityX(0); this.shake(180, .008); Sfx.stomp(); } }
-    else if (B.state === 'leap') { if (B.t <= 0 || (s.body.blocked.down && B.t < 1.0)) { s.body.setVelocityX(0); B.state = 'stun'; B.t = 1.2; this.shake(160, .007); Sfx.stomp(); } }
+    else if (B.state === 'tele') { s.x += Math.sin(this.time.now / 25) * 1.6; if (B.t <= 0) { B.state = Math.random() < .35 ? 'leap' : 'charge'; B.t = B.state === 'charge' ? 1.5 : .01; if (B.state === 'leap') { s.body.setVelocityY(K.leapV || -900); s.body.setVelocityX(clamp(toHero * 1.15, -460, 460)); B.t = 1.2; } } }
+    else if (B.state === 'charge') { s.body.setVelocityX(B.dir * (K.chargeV || 500)); if (s.x < this.S.boss.arenaX + 80 || s.x > this.S.boss.arenaR - 80 || B.t <= 0) { B.state = 'stun'; B.t = 1.6; s.body.setVelocityX(0); this.shake(180, .008); Sfx.stomp(); } }
+    else if (B.state === 'leap') { if (B.t <= 0 || (s.body.blocked.down && B.t < 1.0)) { s.body.setVelocityX(0); B.state = 'stun'; B.t = 1.2; this.shake(160, .007); Sfx.stomp(); if (K.shock) this.spawnShocks(s.x); } }
     else if (B.state === 'stun') { s.body.setVelocityX(0); if (B.t <= 0) { B.state = 'idle'; B.t = 1.4; } }
     s.setFlipX(B.dir < 0); s.x = clamp(s.x, this.S.boss.arenaX + 40, this.S.boss.arenaR - 40);
-    if (B.state === 'stun') s.setTint(0xffe0b0); else if (B.state === 'tele') s.setTint(0xff7060); else s.setTint(0xffb7a0);
-    if (!s.anims.currentAnim || s.anims.currentAnim.key !== 'cat_walk') s.play('cat_walk');
+    if (B.state === 'stun') s.setTint(0xffe0b0); else if (B.state === 'tele') s.setTint(0xff7060); else s.setTint(B.tint);
+    if (K.tex) s.setAngle(B.state === 'charge' ? Math.sin(this.time.now / 60) * 6 : B.state === 'stun' ? 8 : 0); else if (!s.anims.currentAnim || s.anims.currentAnim.key !== 'cat_walk') s.play('cat_walk');
   }
   hitBoss(dmg, kbDir) {
     const B = this.boss; if (!B || B.invul > 0 || B.hp <= 0) return; if (B.state === 'stun') dmg *= 2;
@@ -679,7 +776,7 @@ class Play extends Phaser.Scene {
   }
   bossDown() {
     const B = this.boss; this.bossDefeated = true; this.bossBusy = false; this.show('boss-bar', false); Sfx.fanfare(); this.burst(B.spr.x, B.spr.y - 80, 16);
-    this.toast('돈 캣을 물리쳤다!', 1800); if (this.arenaWall) { this.arenaWall.destroy(); this.arenaWall = null; }
+    this.toast(B.K.name + '을(를) 물리쳤다!', 1800); if (this.arenaWall) { this.arenaWall.destroy(); this.arenaWall = null; }
     this.tweens.add({ targets: [B.spr, B.crown], alpha: 0, y: '-=120', angle: 720, duration: 900, onComplete: () => { B.spr.destroy(); B.crown.destroy(); } }); B.spr.body.enable = false; this.boss = null;
     this.addStars(10, false); this.spawnItem({ k: 'heart', x: B.spr.x, y: STAND - B.spr.y + 90 });
   }
@@ -699,7 +796,7 @@ class Play extends Phaser.Scene {
     this.checks.forEach((c, i) => { if (!c.on && sp.x > c.x) { c.on = true; this.cp = { x: c.x, i }; c.flag.setFillStyle(0xffcf5a); Sfx.check(); this.burst(c.x, STAND - 90, 5); this.toast('체크포인트!', 900); } });
     // goal
     if (!this.finished && Math.abs(sp.x - this.S.goalX) < 100 && (sp.y > STAND - 140 || (this.mount && this.mount.kind === 'eagle'))) {
-      if (this.bossDefeated) this.stageClear(); else if (!this.goalWarn || this.time.now > this.goalWarn) { this.goalWarn = this.time.now + 2000; this.toast('먼저 돈 캣을 물리쳐야 해!', 1200); }
+      if (this.bossDefeated) this.stageClear(); else if (!this.goalWarn || this.time.now > this.goalWarn) { this.goalWarn = this.time.now + 2000; this.toast('먼저 ' + (this.bossName || '보스') + '을(를) 물리쳐야 해!', 1200); }
     }
   }
   touchEnemy(p, en) {
@@ -768,12 +865,12 @@ class Play extends Phaser.Scene {
   stageClear() {
     this.finished = true; this.state = 'clear'; Sfx.fanfare(); const h = this.hero; if (this.mount) this.dismount(); h.body.setVelocity(0, 0); h.anims.stop(); h.play('h_happy');
     const secs = Math.round(this.clockAcc); const idx = this.stageIdx;
-    if (idx + 2 > this.unlocked) { this.unlocked = Math.min(3, idx + 2); tryLS.set('rk2_unlocked', String(this.unlocked)); }
+    if (idx + 2 > this.unlocked) { this.unlocked = Math.min(6, idx + 2); tryLS.set('rk2_unlocked', String(this.unlocked)); }
     this.time.delayedCall(1300, () => {
       this.show('hud', false); this.show('clear', true);
-      $('clear-badge').textContent = idx === 2 ? 'ALL CLEAR' : 'STAGE ' + (idx + 1) + ' CLEAR'; $('clear-title').textContent = idx === 2 ? '집에 도착했다!' : '스테이지 클리어!'; $('clear-quote').textContent = this.S.quote;
+      $('clear-badge').textContent = idx === 5 ? 'ALL CLEAR' : 'STAGE ' + (idx + 1) + ' CLEAR'; $('clear-title').textContent = idx === 5 ? '집에 도착했다!' : '스테이지 클리어!'; $('clear-quote').textContent = this.S.quote;
       $('res-stars').textContent = this.stageStars + '/' + this.stageTotalStars; $('res-letters').textContent = this.letters.filter(Boolean).length + '/3'; $('res-time').textContent = Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0'); $('res-lives').textContent = Math.max(this.lives, 0);
-      $('btn-next').textContent = idx === 2 ? '처음 화면으로' : '다음 스테이지';
+      $('btn-next').textContent = idx === 5 ? '처음 화면으로' : '다음 스테이지';
       const cf = $('confetti'); cf.innerHTML = ''; for (let i = 0; i < 40; i++) { const s = document.createElement('span'); s.className = 'conf'; s.textContent = ['⭐', '🐾', '🦴', '🎉', '❤️'][i % 5]; s.style.left = Math.random() * 100 + '%'; s.style.animationDuration = 2 + Math.random() * 2.5 + 's'; s.style.animationDelay = Math.random() * .8 + 's'; cf.appendChild(s); }
     });
   }
@@ -795,6 +892,8 @@ class Play extends Phaser.Scene {
     b.classList.remove('hidden'); b.textContent = m.kind === 'elephant' ? '🐘 코끼리' : '🦅 독수리'; let s = ''; for (let i = 0; i < m.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < m.hp ? '' : 'off'}" alt="">`; hs.innerHTML = s;
   }
   updateWorldBits(dt) {
+    if (this.lantern) this.lantern.setPosition(this.active.x, this.active.y - 70);
+    if (this.rain) for (const d of this.rain) { d.y += 780 * dt; d.x -= 140 * dt; if (d.y > H + 20) { d.y = -24; d.x = Math.random() * (W + 200); } }
     // hints
     const sp = this.active, near = this.hints.find(h => Math.abs(h.x - sp.x) < 240), el = $('hint');
     if (near) { el.textContent = near.text[T.on ? 1 : 0]; el.classList.remove('hidden'); } else el.classList.add('hidden');

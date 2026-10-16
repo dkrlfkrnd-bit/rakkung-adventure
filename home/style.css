@@ -152,7 +152,8 @@ body.touch #hint{top:30%;font-size:16px;padding:6px 14px}
   .title-sub{font-size:12px;line-height:1.4;margin:4px 0 6px}
   #title-loading{font-size:13px;margin:6px 0}
   .big-btn{font-size:17px;padding:7px 24px;border-radius:14px}
-  .stage-btn{min-width:110px;padding:6px 12px;font-size:16px}
+  .stage-btn{min-width:84px;padding:5px 8px;font-size:14px}
+  #stage-pick{gap:8px}
   .controls{margin-top:6px;gap:4px 8px;font-size:11px}
   .controls span{padding:3px 9px}
   .mode-btn{margin-top:6px;font-size:12px;padding:4px 12px}

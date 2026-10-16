@@ -654,25 +654,25 @@ class Game extends Phaser.Scene {
     if (this.chicken.active) dot(this.chicken.gx, this.chicken.gy, 4.5, '#ff7a3c');
     for (const id in this.npcs) dot(this.npcs[id].gx, this.npcs[id].gy, 2.6, '#ff7a93');
     for (const e of this.enemies || []) if (e.state !== 'dead') dot(e.gx, e.gy, 3, '#ff3b3b');
-    if (this.stage === 6 || this.stage === 7) { const t = (this.time.now / 400) % 2, r = 5 + Math.abs(t - 1) * 3; c.strokeStyle = '#ff7a93'; c.lineWidth = 2; c.beginPath(); c.arc(this.mmOx + 28 * S, this.mmOy + 19 * S, r, 0, 7); c.stroke(); dot(28, 19, 3, '#ff7a93'); }
+    const qm = this.questMark && this.questMark(); if (qm) { const t = (this.time.now / 400) % 2, r = 5 + Math.abs(t - 1) * 3; c.strokeStyle = '#ff7a93'; c.lineWidth = 2; c.beginPath(); c.arc(this.mmOx + qm[0] * S, this.mmOy + qm[1] * S, r, 0, 7); c.stroke(); dot(qm[0], qm[1], 3, '#ff7a93'); }
     c.strokeStyle = '#fff'; c.lineWidth = 2; c.beginPath(); c.arc(this.mmOx + this.hero.gx * S, this.mmOy + this.hero.gy * S, 6, 0, 7); c.stroke(); dot(this.hero.gx, this.hero.gy, 3.6, '#3dd6ff');
   }
 
   /* ===== flow ===== */
   /* ===== save / continue (localStorage; this browser only) ===== */
   readSave() {
-    try { const s = JSON.parse(localStorage.getItem('rk_save_v1') || 'null'); return s && s.v === 1 && s.stage >= 1 ? s : null; } catch (e) { return null; }
+    try { const s = JSON.parse(localStorage.getItem('rk_save_v1') || 'null'); return s && (s.v === 1 || s.v === 2) && s.stage >= 1 ? s : null; } catch (e) { return null; }
   }
   clearSave() { try { localStorage.removeItem('rk_save_v1'); } catch (e) {} }
   saveGame() {
     if (!['play', 'dialog', 'pause'].includes(this.state) || this.stage < 1 || !this.pickups) return;
     const zones = {}; (this.zones || []).forEach(z => { zones[z.id] = z.owner; });
-    const data = { v: 1, t: Date.now(), stage: this.stage, side: this.side, lvl: this.lvl, xp: this.xp, score: this.score, snacks: this.snacks, kills: this.kills || 0, cat3Down: this.cat3Down || 0, cat6Down: this.cat6Down || 0, ch2Started: !!this.ch2Started, mouseGift: !!this.mouseGift, pick: this.pickups.map(p => !!p.got), zones, gx: +this.hero.gx.toFixed(2), gy: +this.hero.gy.toFixed(2), tut: this.tut || {} };
+    const data = { v: 2, t: Date.now(), stage: this.stage, side: this.side, lvl: this.lvl, xp: this.xp, score: this.score, snacks: this.snacks, kills: this.kills || 0, cat3Down: this.cat3Down || 0, chDown: this.chDown || {}, chStarted: this.chStarted || {}, mouseGift: !!this.mouseGift, pick: this.pickups.map(p => !!p.got), zones, gx: +this.hero.gx.toFixed(2), gy: +this.hero.gy.toFixed(2), tut: this.tut || {} };
     try { localStorage.setItem('rk_save_v1', JSON.stringify(data)); } catch (e) {}
   }
   applySave(s) {
     this.lvl = Math.max(1, s.lvl | 0); this.xp = s.xp | 0; this.calcStats(); this.hp = this.maxHp;
-    this.score = s.score | 0; this.snacks = s.snacks | 0; this.kills = s.kills | 0; this.cat3Down = s.cat3Down | 0; this.cat6Down = s.cat6Down | 0; this.mouseGift = !!s.mouseGift; this.ch2Started = !!s.ch2Started; this.tut = s.tut || {};
+    this.score = s.score | 0; this.snacks = s.snacks | 0; this.kills = s.kills | 0; this.cat3Down = s.cat3Down | 0; this.chDown = Object.assign({ 2: 0, 3: 0, 4: 0 }, s.chDown || { 2: s.cat6Down | 0 }); this.chStarted = Object.assign({}, s.chStarted || { 2: !!s.ch2Started }); this.mouseGift = !!s.mouseGift; this.tut = s.tut || {};
     (this.zones || []).forEach(z => { if (s.zones && s.zones[z.id]) z.owner = s.zones[z.id]; }); this.redrawMinimapBase();
     (s.pick || []).forEach((got, i) => { const p = this.pickups[i]; if (p && got) { p.got = true; ['sprite', 'glow', 'sh'].forEach(k => p[k] && p[k].destroy()); } });
     this.side = s.side | 0;
@@ -682,15 +682,17 @@ class Game extends Phaser.Scene {
     // rebuild the situation of the current story step
     if (s.stage === 2) this.spawnTrainingDummy && this.spawnTrainingDummy();
     else if (s.stage === 3) this.spawnCatPack(Math.max(1, 3 - this.cat3Down));
-    else if (s.stage === 5 && !this.ch2Started) { this.ch2Started = true; this.startChapter2(5, true); }
-    else if (s.stage === 6) { this.startChapter2(Math.max(1, 5 - this.cat6Down), true); }
-    else if (s.stage === 7) { this.spawnBoss(); }
+    else {
+      const ch = { 5: 2, 8: 3, 11: 4 }[s.stage];
+      if (ch && !this.chStarted[ch]) this.startChapter(ch, null, true);
+      else for (const k of [2, 3, 4]) { const C = this.chapterInfo(k); if (s.stage === C.stages[0]) this.startChapter(k, Math.max(1, C.n - (this.chDown[k] | 0)), true); else if (s.stage === C.stages[1]) { this.chStarted[k] = true; this.spawnBoss(k); } }
+    }
     this.updateHud(); this.updateSideHud(); this.refreshCombatHud(this.time.now);
-    this.toast('이어하기 · ' + (s.stage >= 6 ? '챕터 2' : '챕터 1') + ' · Lv.' + this.lvl, 2600);
+    this.toast('이어하기 · 챕터 ' + this.chapterOf(s.stage) + ' · Lv.' + this.lvl, 2600);
   }
   refreshTitleButtons() {
     const s = this.readSave(), lb = $('btn-load'), sb = $('btn-start'); if (!lb || !sb) return;
-    if (s && !this.autostart) { lb.classList.remove('hidden'); $('load-info').textContent = (s.stage >= 6 ? '챕터 2' : '챕터 1') + ' · Lv.' + s.lvl; sb.classList.add('ghost'); sb.innerHTML = '새로 시작'; }
+    if (s && !this.autostart) { lb.classList.remove('hidden'); $('load-info').textContent = '챕터 ' + this.chapterOf(s.stage) + ' · Lv.' + s.lvl; sb.classList.add('ghost'); sb.innerHTML = '새로 시작'; }
     else { lb.classList.add('hidden'); sb.classList.remove('ghost'); sb.innerHTML = '게임 시작 <small>Enter</small>'; }
   }
 
@@ -711,7 +713,8 @@ class Game extends Phaser.Scene {
   }
   continuePlay() {
     Sfx.ui(); $('complete').classList.add('hidden'); $('confetti').innerHTML = ''; this.state = 'play';
-    if (this.stage === 5 && !this.ch2Started) { this.ch2Started = true; this.startChapter2(); }   // chapter 1 finished -> chapter 2 begins
+    const nxt = { 5: 2, 8: 3, 11: 4 }[this.stage];   // chapter finished -> the next one begins
+    if (nxt && !this.chStarted[nxt]) this.startChapter(nxt);
   }
   togglePause(force) {
     if (this.state !== 'play' && this.state !== 'pause') return;
@@ -737,9 +740,15 @@ class Game extends Phaser.Scene {
       3: ['챕터 1 · 첫 임무', `골목 상점가의 <b>캣 패밀리 조직원</b>을 쓰러뜨려라. (${this.cat3Down || 0}/3)`],
       4: ['챕터 1 · 완료', '<b>냥냥 사장님</b>에게 이야기를 들어보자. (자유 탐험 가능)'],
       5: ['챕터 1 · 완료', '챕터 2가 곧 시작된다… (계속 탐험하기를 누르면 이어서 진행)'],
-      6: ['챕터 2 · 캣 패밀리의 아지트', `<b>창고 지구</b>(미니맵 분홍 구역)로 가서 캣 패밀리 조직원을 쓰러뜨려라. (${this.cat6Down || 0}/5)`],
+      6: ['챕터 2 · 캣 패밀리의 아지트', `<b>창고 지구</b>(미니맵 분홍 구역)로 가서 캣 패밀리 조직원을 쓰러뜨려라. (${(this.chDown || {})[2] || 0}/5)`],
       7: ['챕터 2 · 보스전', '캣 패밀리의 두목 <b>돈 캣</b>을 쓰러뜨려라! 공격 예고(붉은 표시)를 보고 피하자.'],
-      8: ['챕터 2 · 완료', '창고 지구를 되찾았다! 다음 챕터에서 계속된다… (스카이 크루가 공원을 노린다)'],
+      8: ['챕터 2 · 완료', '창고 지구를 되찾았다! (계속 탐험하기를 누르면 챕터 3이 시작된다)'],
+      9: ['챕터 3 · 스카이 크루의 습격', `<b>중앙공원</b>(미니맵 하늘색 구역)으로 가서 스카이 크루 조직원을 쓰러뜨려라. (${(this.chDown || {})[3] || 0}/6)`],
+      10: ['챕터 3 · 보스전', '스카이 크루의 대장 <b>구구 대장</b>을 쓰러뜨려라! 급강하와 범위 공격의 붉은 예고를 보고 피하자.'],
+      11: ['챕터 3 · 완료', '중앙공원을 되찾았다! (계속 탐험하기를 누르면 챕터 4가 시작된다)'],
+      12: ['챕터 4 · 언더그라운드의 반격', `<b>빵집 거리</b>(미니맵 보라색 구역)로 가서 언더그라운드 조직원을 쓰러뜨려라. (${(this.chDown || {})[4] || 0}/6)`],
+      13: ['챕터 4 · 최종 보스전', '언더그라운드의 왕 <b>치즈 왕</b>을 쓰러뜨려라! 쾅 하는 범위 공격은 점프로 피하자.'],
+      14: ['모든 챕터 완료 🏆', '캣 패밀리, 스카이 크루, 언더그라운드를 모두 쓰러뜨렸다! 도시는 이제 라꿍이의 것이다. 자유롭게 탐험하자.'],
     };
     const t = T[s] || T[5]; $('mission-title').textContent = t[0]; $('mission-text').innerHTML = t[1];
     this.updateSideHud(); this.saveGame();
@@ -755,7 +764,7 @@ class Game extends Phaser.Scene {
     const box = $('snack-slots'); box.innerHTML = '';
     const ems = ['🌭', '🦴', '🍪', '🥩', '🧀'];
     for (let i = 0; i < 5; i++) { const d = document.createElement('div'); d.className = 'slot' + (i < this.snacks ? ' on' : ''); d.textContent = ems[i]; box.appendChild(d); }
-    if (this.stage === 2 || this.stage === 3 || this.stage === 6) this.setStage(this.stage);
+    if (this.stage === 2 || this.stage === 3 || this.stage === 6 || this.stage === 9 || this.stage === 12) this.setStage(this.stage);
   }
   toast(text, ms = 2200) {
     const t = $('toast'); t.textContent = text; t.classList.remove('hidden'); t.style.animation = 'none'; void t.offsetWidth; t.style.animation = '';
@@ -799,7 +808,13 @@ class Game extends Phaser.Scene {
       if (s === 3) return this.openDialog([S('골목 상점가에 캣 패밀리 놈들이 어슬렁거립니다. 가서 혼쭐을 내주십쇼!')]);
       if (s === 6) return this.openDialog([S('창고 지구에 캣 패밀리가 몰려 있습니다, 보스! 졸개부터 정리하십쇼! (미니맵 분홍 구역입니다)')]);
       if (s === 7) return this.openDialog([S('두목입니다! 붉은 표시가 뜨면 피하십쇼. 내려찍기는 점프로, 돌진은 옆으로요!')]);
-      if (s >= 8) return this.openDialog([S('창고까지 되찾으셨습니다, 보스!! 이제 하늘 쪽 스카이 크루가 공원을 노립니다!')]);
+      if (s === 8) return this.openDialog([S('창고까지 되찾으셨습니다, 보스!! 이제 하늘 쪽 스카이 크루가 공원을 노립니다!')]);
+      if (s === 9) return this.openDialog([S('공원에 스카이 크루 비둘기들이 몰려 있습니다, 보스! 하늘색 구역입니다!')]);
+      if (s === 10) return this.openDialog([S('대장 구구입니다! 급강하와 범위 공격의 붉은 예고를 잘 보십쇼!')]);
+      if (s === 11) return this.openDialog([S('공원까지 되찾으셨습니다!! 이제 땅 밑 언더그라운드만 남았습니다, 보스!')]);
+      if (s === 12) return this.openDialog([S('빵집 거리에서 쥐들이 몰려나옵니다! 보라색 구역입니다, 보스!')]);
+      if (s === 13) return this.openDialog([S('치즈 왕입니다! 쾅 소리가 나기 전에 점프하십쇼!')]);
+      if (s >= 14) return this.openDialog([S('해냈습니다 보스!! 이제 이 도시의 보스는 보스뿐입니다!! (선글라스를 벗고 눈물을 닦는 중)')]);
       return this.openDialog([S('보스, 믿고 있습니다! (멀리서 선글라스를 고쳐 쓰는 중)')]);
     }
     if (id === 'cat') {
@@ -807,7 +822,11 @@ class Game extends Phaser.Scene {
       if (s === 4) return this.openDialog([S('감사해요 보스님! 덕분에 한숨 돌렸어요, 냥!'), S('그런데… 두목 \'돈 캣\'이 곧 직접 올 거예요. 창고 쪽에 아지트가 있대요.'), M('…다음엔 그놈 차례군.'), S('아참! 보스님, 사실 우리 가게 치킨 간식도 사라졌는데… 비둘기 짓 같아요.')],
         () => { this.setStage(5); this.score += 100; this.addXp && this.addXp(30); this.side = Math.max(this.side, 1); this.updateSideHud(); this.toast('의뢰 수락: 사라진 치킨 간식 🍗'); Sfx.collect(); this.updateHud(); this.showChapterDone(); });
       if (s === 6 || s === 7) return this.openDialog([S('보스님! 창고 쪽이 시끄러워요, 냥. 조심하세요!')]);
-      if (s >= 8) return this.openDialog([S('고마워요 보스님! 이제 골목도 창고도 평화예요, 냥!')]);
+      if (s === 8) return this.openDialog([S('고마워요 보스님! 이제 골목도 창고도 평화예요, 냥!')]);
+      if (s === 9 || s === 10) return this.openDialog([S('공원 쪽에서 커다란 새 울음소리가 들려요, 냥… 조심하세요!')]);
+      if (s === 11) return this.openDialog([S('공원도 되찾으셨네요, 냥! 하늘이 맑아졌어요!')]);
+      if (s === 12 || s === 13) return this.openDialog([S('빵집 쪽이 쥐들로 가득이래요, 냥… 치즈 냄새만 나면 난리예요!')]);
+      if (s >= 14) return this.openDialog([S('보스님 만세예요, 냥!! 이제 우리 가게도 마음 편히 열어요!')]);
       return this.openDialog([S('구구 형님 조심하세요, 냥. 그 아이 눈빛이 좀… 날카로워요.')]);
     }
     if (id === 'pigeon') {
@@ -860,7 +879,7 @@ class Game extends Phaser.Scene {
   }
   showChapterDone(ch = 1) {
     this.happyUntil = this.time.now + 1800; this.playCustom('happy', this.lastDir, 1.2);
-    const CH = { 1: ['CHAPTER 1 CLEAR', '첫 번째 전투를 이겼다!', '"…캣 패밀리, 이제 시작이다. 도시는 우리가 되찾는다."'], 2: ['CHAPTER 2 CLEAR', '돈 캣을 쓰러뜨렸다!', '"캣 패밀리는 무너졌다. 다음은… 하늘을 노리는 스카이 크루다."'] }[ch] || [];
+    const CH = { 1: ['CHAPTER 1 CLEAR', '첫 번째 전투를 이겼다!', '"…캣 패밀리, 이제 시작이다. 도시는 우리가 되찾는다."'], 2: ['CHAPTER 2 CLEAR', '돈 캣을 쓰러뜨렸다!', '"캣 패밀리는 무너졌다. 다음은… 하늘을 노리는 스카이 크루다."'], 3: ['CHAPTER 3 CLEAR', '구구 대장을 쓰러뜨렸다!', '"스카이 크루는 무너졌다. 이제 땅 밑의 언더그라운드만 남았다."'], 4: ['ALL CLEAR · THE END', '도시를 되찾았다!', '"캣 패밀리, 스카이 크루, 언더그라운드… 이 도시의 보스는 라꿍이다."'] }[ch] || [];
     if ($('clear-badge') && CH.length) { $('clear-badge').textContent = CH[0]; $('clear-title').textContent = CH[1]; $('clear-quote').textContent = CH[2]; }
     this.time.delayedCall(1500, () => {
       const secs = Math.floor((this.time.now - this.t0) / 1000);
