@@ -212,3 +212,7 @@ body.touch #toast{top:64px;font-size:15px;padding:7px 16px;max-width:88vw}
   #complete .panel>.stats{justify-self:stretch}
   #complete .big-btn,#complete .big-btn.ghost{margin-top:0;justify-content:center}
 }
+/* link to the side-scroller */
+.home-link{display:inline-block;margin-top:14px;padding:8px 18px;border-radius:999px;background:rgba(255,207,90,.16);border:1px solid var(--line);color:var(--gold);text-decoration:none;font-size:15px}
+.home-link:hover{background:rgba(255,207,90,.3)}
+@media (max-height:480px) and (orientation:landscape){ .home-link{margin-top:6px;font-size:12px;padding:4px 12px} }

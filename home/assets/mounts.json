@@ -1,0 +1,31 @@
+{
+ "elephant": {
+  "frameW": 300,
+  "frameH": 187,
+  "cols": 5,
+  "anims": {
+   "idle": {
+    "frames": 25,
+    "fps": 12,
+    "loop": true
+   },
+   "walk": {
+    "frames": 25,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ },
+ "eagle": {
+  "frameW": 230,
+  "frameH": 300,
+  "cols": 5,
+  "anims": {
+   "fly": {
+    "frames": 25,
+    "fps": 12,
+    "loop": true
+   }
+  }
+ }
+}
