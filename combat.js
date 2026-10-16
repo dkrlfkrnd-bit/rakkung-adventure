@@ -16,13 +16,14 @@ window.RKCombat = {
     const ENEMY = {
       cat: { name: '캣 조직원', hp: 42, speed: 3.7, patrol: 1.3, sight: 6.5, dmg: 8, range: 1.15, windup: 420, cd: 1350, xp: 20, scale: 1.3, h: 138, char: 'cat' },
       dummy: { name: '훈련용 샌드백', hp: 80, inert: true, xp: 0, scale: 1.3 },
+      boss: { name: '돈 캣', boss: true, hp: 380, speed: 3.3, patrol: 1.0, sight: 99, dmg: 15, range: 1.7, windup: 650, cd: 1500, xp: 160, scale: 1.7, h: 215, char: 'cat', kbMul: .3 },
     };
     const ang = (dx, dy) => Math.atan2(dy, dx);
 
     Object.assign(Game.prototype, {
       /* ================= setup ================= */
       initCombat() {
-        this.lvl = 1; this.xp = 0; this.kills = 0; this.cat3Down = 0;
+        this.lvl = 1; this.xp = 0; this.kills = 0; this.cat3Down = 0; this.cat6Down = 0;
         this.calcStats(); this.hp = this.maxHp;
         this.cd = { bite: 0, dash: 0, bark: 0, crew: 0 };
         this.combo = 0; this.lastBite = -9999; this.atkLockUntil = 0; this.hurtLockUntil = 0; this.invulnUntil = 0; this.hitstopUntil = 0;
@@ -92,11 +93,106 @@ window.RKCombat = {
         e.barFill = this.add.rectangle(x - 22, y, 44, 5, 0xff5a6e).setOrigin(0, .5).setDepth(99991).setVisible(false);
         e.mark = this.add.text(x, y, '!', { fontFamily: 'sans-serif', fontSize: '30px', fontStyle: 'bold', color: '#ff3b3b', stroke: '#fff', strokeThickness: 5 }).setOrigin(.5).setDepth(99992).setVisible(false);
         e.stars = this.add.image(x, y, 'star').setDepth(99992).setVisible(false);
+        if (d.boss) e.crown = this.add.text(x, y, '👑', { fontSize: '46px', fontFamily: '"Segoe UI Emoji","Apple Color Emoji",sans-serif' }).setOrigin(.5).setDepth(99992);
         this.enemies.push(e); return e;
       },
       spawnTrainingDummy() { if (this.dummy) return; this.dummy = this.spawnEnemy('dummy', 11, 13.6); this.toast('샌드백으로 기술을 연습하자!', 2500); },
       spawnCatPack() {
         [[28.5, 12.5], [30.5, 13.8], [26.8, 15.6]].forEach(([gx, gy], i) => this.spawnEnemy('cat', gx, gy, { tag: 'cat3' }));
+      },
+
+      /* ================= chapter 2 : warehouse + boss ================= */
+      freeSpot(gx, gy) { for (let r = 0; r < 6; r += .6) for (let a = 0; a < 6.3; a += .8) { const x = gx + Math.cos(a) * r, y = gy + Math.sin(a) * r; if (!this.blocked(x, y, .55)) return { gx: x, gy: y }; } return { gx, gy }; },
+      startChapter2() {
+        this.cat6Down = 0; this.setStage(6);
+        const wz = this.zones.find(z => z.id === 'warehouse'); if (wz) { wz.owner = 'cat'; this.redrawMinimapBase(); }
+        [[24, 18], [27.5, 17.2], [31, 18.4], [33.6, 17], [28.5, 19.6]].forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy('cat', p.gx, p.gy, { tag: 'cat6' }); });
+        this.toast('챕터 2 시작! 캣 패밀리가 창고 지구를 점령했다 📍 미니맵 표시로 가자', 4200); Sfx.fanfare();
+      },
+      startBossIntro() {
+        this.setStage(7); Sfx.tone(120, .5, 'sawtooth', .08, 40);
+        this.time.delayedCall(900, () => {
+          const D = (who, icon, text) => ({ who, icon, text });
+          this.openDialog([
+            D('돈 캣', '😼', '…내 부하들을 이렇게 만들어놨냐옹.'), D('라꿍이', '🐶', '…네가 두목이군.'),
+            D('돈 캣', '😼', '여긴 캣 패밀리 구역이다옹! 꼬리 짧은 강아지 따위가!'), D('라꿍이', '🐶', '(꼬리 얘기는 하지 마라.)'),
+          ], () => this.spawnBoss());
+        });
+      },
+      spawnBoss() {
+        const p = this.freeSpot(28, 18.5), e = this.spawnEnemy('boss', p.gx, p.gy, { tag: 'boss' });
+        e.state = 'chase'; e.nextAtk = this.time.now + 1600; this.cameras.main.shake(300, .01); this.toast('보스 · 돈 캣 😾', 2200); Sfx.tone(100, .6, 'sawtooth', .1, 50);
+        this.burst(sx(e.gx, e.gy), sy(e.gx, e.gy) - 80, ['💨', '⭐'], 8);
+      },
+      bossAI(e, time, dt, dist, toH, step) {
+        const d = e.d, h = this.hero, cdMul = e.phase2 ? .72 : 1;
+        if (this.dead && e.state !== 'dash') e.state = 'return';
+        if (!e.phase2 && e.hp < e.maxHp * .5) { e.phase2 = true; this.bossPhase2(e); }
+        switch (e.state) {
+          case 'idle': if (!this.dead && dist < 11) e.state = 'chase'; break;
+          case 'chase':
+            if (dist > 15) { e.state = 'return'; break; }
+            if (dist > d.range * .8) step(toH(), d.speed * (e.phase2 ? 1.25 : 1));
+            if (time > e.nextAtk && !this.dead) this.bossChoose(e, time, dist, toH);
+            break;
+          case 'windup': if (time >= e.windAt) this.bossStrike(e, time, toH); break;
+          case 'dash': {
+            const hits = this.moveEnt(e, e.cdx * 11 * dt / 1000, e.cdy * 11 * dt / 1000);
+            if (!e.dashHit && !this.dead && Math.hypot(h.gx - e.gx, h.gy - e.gy) < 1.3) { e.dashHit = true; this.hurtPlayer(d.dmg + 4, e.gx, e.gy); }
+            if (hits > 1) { e.state = 'stunned'; e.stunUntil = time + 1400; e.nextAtk = time + 1400 * cdMul; this.cameras.main.shake(200, .01); this.floatText(sx(e.gx, e.gy), sy(e.gx, e.gy) - 200, 'BONK!', '#ffd24a', 34); Sfx.tone(110, .2, 'square', .09); }
+            else if (time >= e.dashUntil) { e.state = 'recover'; e.recoverAt = time + 750; e.nextAtk = time + 1500 * cdMul; }
+            break;
+          }
+          case 'recover': if (time >= e.recoverAt) e.state = 'chase'; break;
+          case 'return': {
+            const hd = Math.hypot(e.home.gx - e.gx, e.home.gy - e.gy);
+            if (hd > .6) step({ gx: (e.home.gx - e.gx) / hd, gy: (e.home.gy - e.gy) / hd }, d.speed * 1.6); else e.state = 'idle';
+            if (!this.dead && dist < 11) e.state = 'chase';
+            break;
+          }
+          default: e.state = 'chase';
+        }
+      },
+      bossChoose(e, time, dist, toH) {
+        const r = Math.random(); let atk;
+        if (dist < 2.4) atk = r < .55 ? 'swipe' : 'slam'; else if (dist < 7.5) atk = r < .5 ? 'charge' : r < .8 ? 'slam' : 'swipe'; else atk = 'charge';
+        if (atk === 'swipe' && dist > 3) atk = 'charge';
+        e.atk = atk; e.state = 'windup'; e.windAt = time + { swipe: 650, slam: 1000, charge: 800 }[atk] * (e.phase2 ? .8 : 1);
+        e.warnR = { swipe: e.d.range + .5, slam: 3.6, charge: 1.1 }[atk];
+        const t = toH(); e.cdx = t.gx; e.cdy = t.gy; e.tgx = e.gx + t.gx * 7; e.tgy = e.gy + t.gy * 7;
+        if (atk === 'slam' && !this.slamHint) { this.slamHint = true; this.toast('내려찍기 예고! 점프(Space)로 피하자 ⬆', 2600); }
+        if (atk === 'charge' && !this.chargeHint) { this.chargeHint = true; this.toast('돌진 예고! 옆으로 피하자 ↔', 2400); }
+        Sfx.tone(atk === 'slam' ? 90 : 160, .3, 'sawtooth', .07, 40);
+      },
+      bossStrike(e, time, toH) {
+        const d = e.d, h = this.hero, t = toH(), cdMul = e.phase2 ? .72 : 1;
+        if (e.atk === 'swipe') {
+          this.moveEnt(e, t.gx * .7, t.gy * .7); this.addFx({ type: 'claw', gx: e.gx, gy: e.gy, tx: h.gx, ty: h.gy, t0: time, dur: 260 }); Sfx.noise(.12, .09, 1500);
+          if (!this.dead && Math.hypot(h.gx - e.gx, h.gy - e.gy) < d.range + .6) this.hurtPlayer(d.dmg, e.gx, e.gy);
+          e.state = 'recover'; e.recoverAt = time + 650; e.nextAtk = time + 1400 * cdMul;
+        } else if (e.atk === 'slam') {
+          const x = sx(e.gx, e.gy), y = sy(e.gx, e.gy);
+          this.addFx({ type: 'ring', x, y, t0: time, dur: 560, R: 3.6 * TW / 2 * 1.42, color: 0xff6a4a, w: 10, iso: true });
+          this.cameras.main.shake(260, .012); Sfx.noise(.3, .1, 200); Sfx.tone(80, .3, 'square', .1, -30);
+          if (!this.dead && !this.jumping && Math.hypot(h.gx - e.gx, h.gy - e.gy) < 3.6) this.hurtPlayer(d.dmg + 8, e.gx, e.gy);
+          e.state = 'recover'; e.recoverAt = time + 900; e.nextAtk = time + 1700 * cdMul;
+        } else { e.state = 'dash'; e.dashUntil = time + 640; e.dashHit = false; Sfx.noise(.3, .08, 500); Sfx.tone(200, .3, 'sawtooth', .06, 400); }
+      },
+      bossPhase2(e) {
+        this.toast('돈 캣이 화났다! 부하들을 부른다 😾', 2800); this.cameras.main.shake(300, .01); Sfx.tone(120, .5, 'sawtooth', .09, 60);
+        [[-2.5, 1], [1.5, -2.5]].forEach(([dx, dy]) => { const p = this.freeSpot(e.gx + dx, e.gy + dy), m = this.spawnEnemy('cat', p.gx, p.gy, { tag: 'minion' }); m.state = 'chase'; });
+      },
+      onBossDown(e) {
+        this.setStage(8);
+        ['warehouse', 'alley'].forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; }); this.redrawMinimapBase();
+        for (const m of this.enemies) if (m !== e && m.state !== 'dead' && !m.d.inert) { m.hp = 0; m.stunUntil = 0; this.killEnemy(m); }
+        this.score += 600; this.addXp(100); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01);
+        this.toast('창고 지구와 골목 상점가를 되찾았다! 🏆', 4200);
+        this.time.delayedCall(2200, () => { if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(2); });
+      },
+      refreshBossHud() {
+        const B = this.enemies.find(x => x.d.boss && x.state !== 'dead'), bar = $('boss-bar'); if (!bar) return;
+        bar.classList.toggle('hidden', !B || this.state === 'title'); if (B) $('boss-fill').style.width = (100 * Math.max(0, B.hp) / B.maxHp) + '%';
       },
 
       damageEnemy(e, dmg, from, o = {}) {
@@ -105,9 +201,9 @@ window.RKCombat = {
         e.hp -= dmg; e.flashUntil = t + 90; e.spr.setTintFill(0xffffff);
         this.hitstopUntil = Math.max(this.hitstopUntil, t + (o.big ? 80 : 45));
         // knockback away from source
-        const dx = e.gx - from.gx, dy = e.gy - from.gy, l = Math.hypot(dx, dy) || 1, kb = o.kb || 1.2;
+        const dx = e.gx - from.gx, dy = e.gy - from.gy, l = Math.hypot(dx, dy) || 1, kb = (o.kb || 1.2) * (e.d.kbMul || 1);
         e.kv.gx += dx / l * kb * 6; e.kv.gy += dy / l * kb * 6;
-        if (o.stun) { e.stunUntil = Math.max(e.stunUntil, t + o.stun); }
+        if (o.stun) { e.stunUntil = Math.max(e.stunUntil, t + (e.d.boss ? Math.min(o.stun, 600) : o.stun)); }
         this.floatText(sx(e.gx, e.gy), sy(e.gx, e.gy) - 110, dmg, o.big ? '#ffd24a' : '#ffffff', o.big ? 34 : 26);
         this.hitSpark(sx(e.gx, e.gy), sy(e.gx, e.gy) - 50, o.big);
         Sfx.tone(o.big ? 180 : 260, .09, 'square', .07, -100);
@@ -127,6 +223,12 @@ window.RKCombat = {
         this.floatText(sx(e.gx, e.gy), sy(e.gx, e.gy) - 150, `+${e.d.xp} XP`, '#7dffb0', 26);
         this.score += 100; this.addXp(e.d.xp); this.updateHud();
         Sfx.tone(140, .25, 'sawtooth', .08, -60);
+        if (e.crown) this.tweens.add({ targets: e.crown, y: e.crown.y - 70, alpha: 0, duration: 900, onComplete: () => e.crown.destroy() });
+        if (e.tag === 'cat6' && this.stage === 6) {
+          this.cat6Down++;
+          if (this.cat6Down >= 5) this.startBossIntro(); else { this.setStage(6); this.toast(`캣 패밀리 조직원 격파! (${this.cat6Down}/5)`, 1600); }
+        }
+        if (e.d.boss) this.onBossDown(e);
         if (e.tag === 'cat3') {
           this.cat3Down++;
           if (this.stage === 3) {
@@ -151,7 +253,7 @@ window.RKCombat = {
               const toH = () => { const l = dist || 1; return { gx: (h.gx - e.gx) / l, gy: (h.gy - e.gy) / l }; };
               const step = (dir, spd) => { const hits = this.moveEnt(e, dir.gx * spd * dt / 1000, dir.gy * spd * dt / 1000); if (hits > 1 && Math.random() < .1) { /* nudge around corners */ this.moveEnt(e, -dir.gy * spd * dt / 600, dir.gx * spd * dt / 600); } };
               if (this.dead) { if (e.state !== 'return' && e.state !== 'patrol') e.state = 'return'; }
-              switch (e.state) {
+              if (d.boss) this.bossAI(e, time, dt, dist, toH, step); else switch (e.state) {
                 case 'patrol': {
                   if (!e.wp || time > e.wpAt) { const a = Math.random() * 6.28, r = 1 + Math.random() * 2.5; e.wp = { gx: e.home.gx + Math.cos(a) * r, gy: e.home.gy + Math.sin(a) * r }; e.wpAt = time + 2200 + Math.random() * 2000; }
                   const wd = Math.hypot(e.wp.gx - e.gx, e.wp.gy - e.gy); if (wd > .3) step({ gx: (e.wp.gx - e.gx) / wd, gy: (e.wp.gy - e.gy) / wd }, d.patrol);
@@ -206,12 +308,13 @@ window.RKCombat = {
           if (e.flashUntil && time > e.flashUntil) { e.spr.clearTint(); e.flashUntil = 0; }
           if (wind && !e.spr.isTinted) e.spr.setTint(0xff8888);
           if (!wind && e.state !== 'stunned' && !e.flashUntil && e.spr.isTinted) e.spr.clearTint();
-          e.sh.setPosition(x, y);
-          const showBar = e.hp < e.maxHp && e.state !== 'idle' || (e.d.inert && e.hp < e.maxHp) || (!d.inert && dist < 9 && e.state !== 'patrol');
+          e.sh.setPosition(x, y); if (e.crown) e.crown.setPosition(x, y - d.h - 14 + Math.sin(time / 200) * 3);
+          const showBar = !d.boss && (e.hp < e.maxHp && e.state !== 'idle' || (e.d.inert && e.hp < e.maxHp) || (!d.inert && dist < 9 && e.state !== 'patrol'));
           e.barBg.setVisible(showBar).setPosition(x, y - 118); e.barFill.setVisible(showBar).setPosition(x - 22, y - 118).setSize(Math.max(0, 44 * e.hp / e.maxHp), 5);
           e.mark.setVisible(e.state === 'alert').setPosition(x, y - 138);
           e.stars.setVisible(e.state === 'stunned').setPosition(x + Math.cos(time / 120) * 20, y - 125 + Math.sin(time / 120) * 5).setAngle(time / 4);
-          if (wind) this.fxList.push({ type: 'warn', gx: e.gx, gy: e.gy, t0: time, dur: 40, r: d.range + 0.4 });
+          if (wind) this.fxList.push({ type: 'warn', gx: e.gx, gy: e.gy, t0: time, dur: 40, r: e.warnR || d.range + 0.4 });
+          if (wind && d.boss && e.atk === 'charge') this.fxList.push({ type: 'line', gx: e.gx, gy: e.gy, tx: e.tgx, ty: e.tgy, t0: time, dur: 40 });
         }
       },
 
@@ -356,6 +459,9 @@ window.RKCombat = {
           } else if (f.type === 'claw') {
             const x1 = sx(f.tx, f.ty), y1 = sy(f.tx, f.ty) - 50, a = 1 - p; g.lineStyle(5, 0xff6a6a, a);
             for (let i = -1; i <= 1; i++) { g.beginPath(); g.moveTo(x1 - 28 + i * 12, y1 - 24); g.lineTo(x1 + 24 + i * 12, y1 + 24); g.strokePath(); }
+          } else if (f.type === 'line') {
+            g.lineStyle(34, 0xff3b3b, .26); g.beginPath(); g.moveTo(sx(f.gx, f.gy), sy(f.gx, f.gy)); g.lineTo(sx(f.tx, f.ty), sy(f.tx, f.ty)); g.strokePath();
+            g.lineStyle(4, 0xff6a6a, .8); g.beginPath(); g.moveTo(sx(f.gx, f.gy), sy(f.gx, f.gy)); g.lineTo(sx(f.tx, f.ty), sy(f.tx, f.ty)); g.strokePath();
           } else if (f.type === 'warn') {
             const x = sx(f.gx, f.gy), y = sy(f.gx, f.gy), r = f.r * TW / 2 * 1.42; g.fillStyle(0xff3b3b, .22); g.fillEllipse(x, y, r * 2, r); g.lineStyle(3, 0xff5a5a, .8); g.strokeEllipse(x, y, r * 2, r);
           }
@@ -381,7 +487,7 @@ window.RKCombat = {
           if (time >= this.dashUntil) this.dashing = false;
         }
         this.updateEnemies(time, dt);
-        this.drawFx(time);
+        this.drawFx(time); this.refreshBossHud();
         this.refreshCombatHud(time);
       },
 

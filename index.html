@@ -44,6 +44,7 @@
       <div class="skill locked" id="sk-crew"><div class="ico">🐕‍🦺</div><div class="cdo"></div><div class="cdt">🔒</div><span class="key">R</span><span class="nm">조직원</span></div>
     </div>
 
+    <div id="boss-bar" class="hidden"><div class="bb-name">👑 돈 캣</div><div class="bb-track"><div id="boss-fill"></div></div></div>
     <canvas id="minimap" width="200" height="150"></canvas>
     <div id="hud-help">WASD 이동 · Shift 달리기 · Space 점프 · E 상호작용 · J 물기 · K 돌진 · L 왕짖기 · Esc 일시정지</div>
   </div>
@@ -103,9 +104,9 @@
   <!-- complete -->
   <div id="complete" class="screen hidden">
     <div class="panel wide">
-      <div class="title-badge">CHAPTER 1 CLEAR</div>
-      <h2>첫 번째 전투를 이겼다!</h2>
-      <p class="quote">"…캣 패밀리, 이제 시작이다. 도시는 우리가 되찾는다."</p>
+      <div class="title-badge" id="clear-badge">CHAPTER 1 CLEAR</div>
+      <h2 id="clear-title">첫 번째 전투를 이겼다!</h2>
+      <p class="quote" id="clear-quote">"…캣 패밀리, 이제 시작이다. 도시는 우리가 되찾는다."</p>
       <div class="stats">
         <div><span>점수</span><b id="res-score">0</b></div>
         <div><span>레벨</span><b id="res-snacks">1</b></div>
