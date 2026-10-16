@@ -233,3 +233,8 @@ body.touch #toast{top:64px;font-size:15px;padding:7px 16px;max-width:88vw}
 #boss-fill{height:100%;width:100%;background:linear-gradient(180deg,#ff8a6a,#d6322a);transition:width .25s}
 body.touch #boss-bar{top:auto;bottom:max(14px,env(safe-area-inset-bottom));width:min(340px,40vw)}
 body.touch .bb-name{font-size:12px}
+
+/* title: continue + new game side by side */
+.btn-row{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap}
+.btn-row .big-btn.ghost{margin-top:0}
+#btn-load small{border:0;opacity:.75;font-size:13px}

@@ -209,7 +209,7 @@ class Game extends Phaser.Scene {
     this.cameras.main.centerOn(this.camTarget.x, this.camTarget.y);
     this.setStage(0); this.updateHud(); this.bindDom();
     $('title').classList.remove('hidden'); $('hud').classList.add('hidden');
-    $('btn-start').classList.remove('hidden'); this.refreshModeButtons();
+    $('btn-start').classList.remove('hidden'); this.refreshModeButtons(); this.refreshTitleButtons();
     $('pause').classList.add('hidden'); $('complete').classList.add('hidden'); $('dialog').classList.add('hidden');
     if (this.autostart) this.startGame();
   }
@@ -217,7 +217,9 @@ class Game extends Phaser.Scene {
   bindDom() {
     if (window.__domBound) return; window.__domBound = true;
     const g = () => window.__game;
-    $('btn-start').addEventListener('click', () => g().startGame());
+    $('btn-start').addEventListener('click', () => { const gg = g(); if (gg.readSave() && !confirm('저장된 진행을 지우고 처음부터 시작할까요?')) return; gg.startGame(false); });
+    $('btn-load').addEventListener('click', () => g().startGame(true));
+    addEventListener('pagehide', () => g() && g().saveGame()); document.addEventListener('visibilitychange', () => { if (document.hidden && g()) g().saveGame(); });
     $('btn-resume').addEventListener('click', () => g().togglePause(false));
     $('btn-restart').addEventListener('click', () => g().restart());
     $('btn-again').addEventListener('click', () => g().restart());
@@ -657,13 +659,49 @@ class Game extends Phaser.Scene {
   }
 
   /* ===== flow ===== */
-  startGame() {
+  /* ===== save / continue (localStorage; this browser only) ===== */
+  readSave() {
+    try { const s = JSON.parse(localStorage.getItem('rk_save_v1') || 'null'); return s && s.v === 1 && s.stage >= 1 ? s : null; } catch (e) { return null; }
+  }
+  clearSave() { try { localStorage.removeItem('rk_save_v1'); } catch (e) {} }
+  saveGame() {
+    if (!['play', 'dialog', 'pause'].includes(this.state) || this.stage < 1 || !this.pickups) return;
+    const zones = {}; (this.zones || []).forEach(z => { zones[z.id] = z.owner; });
+    const data = { v: 1, t: Date.now(), stage: this.stage, side: this.side, lvl: this.lvl, xp: this.xp, score: this.score, snacks: this.snacks, kills: this.kills || 0, cat3Down: this.cat3Down || 0, cat6Down: this.cat6Down || 0, ch2Started: !!this.ch2Started, mouseGift: !!this.mouseGift, pick: this.pickups.map(p => !!p.got), zones, gx: +this.hero.gx.toFixed(2), gy: +this.hero.gy.toFixed(2), tut: this.tut || {} };
+    try { localStorage.setItem('rk_save_v1', JSON.stringify(data)); } catch (e) {}
+  }
+  applySave(s) {
+    this.lvl = Math.max(1, s.lvl | 0); this.xp = s.xp | 0; this.calcStats(); this.hp = this.maxHp;
+    this.score = s.score | 0; this.snacks = s.snacks | 0; this.kills = s.kills | 0; this.cat3Down = s.cat3Down | 0; this.cat6Down = s.cat6Down | 0; this.mouseGift = !!s.mouseGift; this.ch2Started = !!s.ch2Started; this.tut = s.tut || {};
+    (this.zones || []).forEach(z => { if (s.zones && s.zones[z.id]) z.owner = s.zones[z.id]; }); this.redrawMinimapBase();
+    (s.pick || []).forEach((got, i) => { const p = this.pickups[i]; if (p && got) { p.got = true; ['sprite', 'glow', 'sh'].forEach(k => p[k] && p[k].destroy()); } });
+    this.side = s.side | 0;
+    if (this.side >= 3) { this.chicken.done = true; this.chicken.active = false; ['sprite', 'glow', 'sh'].forEach(k => this.chicken[k] && this.chicken[k].destroy()); }
+    this.hero.gx = s.gx; this.hero.gy = s.gy; this.syncHero(); this.cameras.main.centerOn(this.camTarget.x, this.camTarget.y);
+    this.stage = s.stage; this.setStage(s.stage);
+    // rebuild the situation of the current story step
+    if (s.stage === 2) this.spawnTrainingDummy && this.spawnTrainingDummy();
+    else if (s.stage === 3) this.spawnCatPack(Math.max(1, 3 - this.cat3Down));
+    else if (s.stage === 5 && !this.ch2Started) { this.ch2Started = true; this.startChapter2(5, true); }
+    else if (s.stage === 6) { this.startChapter2(Math.max(1, 5 - this.cat6Down), true); }
+    else if (s.stage === 7) { this.spawnBoss(); }
+    this.updateHud(); this.updateSideHud(); this.refreshCombatHud(this.time.now);
+    this.toast('이어하기 · ' + (s.stage >= 6 ? '챕터 2' : '챕터 1') + ' · Lv.' + this.lvl, 2600);
+  }
+  refreshTitleButtons() {
+    const s = this.readSave(), lb = $('btn-load'), sb = $('btn-start'); if (!lb || !sb) return;
+    if (s && !this.autostart) { lb.classList.remove('hidden'); $('load-info').textContent = (s.stage >= 6 ? '챕터 2' : '챕터 1') + ' · Lv.' + s.lvl; sb.classList.add('ghost'); sb.innerHTML = '새로 시작'; }
+    else { lb.classList.add('hidden'); sb.classList.remove('ghost'); sb.innerHTML = '게임 시작 <small>Enter</small>'; }
+  }
+
+  startGame(resume) {
     if (this.state !== 'title') return;
     Sfx.resume(); Sfx.ui();
     if (window.__touch && window.__touch.on) { try { const d = document.documentElement, p = (d.requestFullscreen || d.webkitRequestFullscreen || (() => {})).call(d); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
     $('title').classList.add('hidden'); $('hud').classList.remove('hidden');
     this.state = 'play'; this.t0 = this.time.now;
-    this.setStage(1);
+    const sv = resume && this.readSave(); if (sv) { this.applySave(sv); return; }
+    this.clearSave(); this.setStage(1);
     this.time.delayedCall(450, () => this.say('여기가… 우리 구역이군.', 1800));
   }
   restart() {
@@ -704,7 +742,7 @@ class Game extends Phaser.Scene {
       8: ['챕터 2 · 완료', '창고 지구를 되찾았다! 다음 챕터에서 계속된다… (스카이 크루가 공원을 노린다)'],
     };
     const t = T[s] || T[5]; $('mission-title').textContent = t[0]; $('mission-text').innerHTML = t[1];
-    this.updateSideHud();
+    this.updateSideHud(); this.saveGame();
   }
   updateSideHud() {
     const el = $('side-text'); if (!el) return;
@@ -860,12 +898,13 @@ class Game extends Phaser.Scene {
 
   update(time, dt) {
     const k = this.cur, w = this.wasd, h = this.hero;
-    if (this.hit('Enter') && this.state === 'title') this.startGame();
+    if (this.hit('Enter') && this.state === 'title') this.startGame(!!this.readSave());
     if (this.hit('Enter') && this.state === 'complete') this.continuePlay();
     if (this.hit('KeyV') && (this.state === 'play' || this.state === 'pause' || this.state === 'title')) this.toggleMode();
     if ((this.hit('Escape') || this.hit('KeyP')) && (this.state === 'play' || this.state === 'pause')) this.togglePause();
     if (this.state === 'dialog' && (this.hit('KeyE') || this.hit('Space') || this.hit('Enter'))) this.advanceDialog();
     if (this.state === 'pause') { this.pressed = {}; return; }
+    if (this.state === 'play' && time > (this.nextSave || 0)) { this.nextSave = time + 3000; this.saveGame(); }
 
     for (const c of this.cars) {
       c.t += c.speed * dt / 1000; const L = MW + 8; if (c.t > L - 4) c.t -= L; if (c.t < -4) c.t += L;

@@ -97,17 +97,17 @@ window.RKCombat = {
         this.enemies.push(e); return e;
       },
       spawnTrainingDummy() { if (this.dummy) return; this.dummy = this.spawnEnemy('dummy', 11, 13.6); this.toast('샌드백으로 기술을 연습하자!', 2500); },
-      spawnCatPack() {
-        [[28.5, 12.5], [30.5, 13.8], [26.8, 15.6]].forEach(([gx, gy], i) => this.spawnEnemy('cat', gx, gy, { tag: 'cat3' }));
+      spawnCatPack(n = 3) {
+        [[28.5, 12.5], [30.5, 13.8], [26.8, 15.6]].slice(0, n).forEach(([gx, gy], i) => this.spawnEnemy('cat', gx, gy, { tag: 'cat3' }));
       },
 
       /* ================= chapter 2 : warehouse + boss ================= */
       freeSpot(gx, gy) { for (let r = 0; r < 6; r += .6) for (let a = 0; a < 6.3; a += .8) { const x = gx + Math.cos(a) * r, y = gy + Math.sin(a) * r; if (!this.blocked(x, y, .55)) return { gx: x, gy: y }; } return { gx, gy }; },
-      startChapter2() {
-        this.cat6Down = 0; this.setStage(6);
+      startChapter2(remaining = 5, silent = false) {
+        this.cat6Down = 5 - remaining; this.setStage(6);
         const wz = this.zones.find(z => z.id === 'warehouse'); if (wz) { wz.owner = 'cat'; this.redrawMinimapBase(); }
-        [[24, 18], [27.5, 17.2], [31, 18.4], [33.6, 17], [28.5, 19.6]].forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy('cat', p.gx, p.gy, { tag: 'cat6' }); });
-        this.toast('챕터 2 시작! 캣 패밀리가 창고 지구를 점령했다 📍 미니맵 표시로 가자', 4200); Sfx.fanfare();
+        [[24, 18], [27.5, 17.2], [31, 18.4], [33.6, 17], [28.5, 19.6]].slice(0, remaining).forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy('cat', p.gx, p.gy, { tag: 'cat6' }); });
+        if (!silent) { this.toast('챕터 2 시작! 캣 패밀리가 창고 지구를 점령했다 📍 미니맵 표시로 가자', 4200); Sfx.fanfare(); }
       },
       startBossIntro() {
         this.setStage(7); Sfx.tone(120, .5, 'sawtooth', .08, 40);
