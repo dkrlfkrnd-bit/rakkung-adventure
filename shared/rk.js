@@ -6,7 +6,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
 };
 const SELF = document.currentScript && document.currentScript.src;
-const RK = window.RK = { build: '20261016d', sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
+const RK = window.RK = { build: '20261016h', sound: LS.get('rk_sound', '1') === '1', vibOn: LS.get('rk_vib', '1') === '1', listeners: [] };
 const emit = () => RK.listeners.forEach(f => { try { f(); } catch (e) {} });
 
 /* ---------------- audio: one shared context, an SFX bus and a music bus behind a master gain ---------------- */
@@ -106,6 +106,60 @@ RK.checkUpdate = async () => {
 setTimeout(RK.checkUpdate, 4000); setInterval(RK.checkUpdate, 300000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden) RK.checkUpdate(); });
 
+/* ---------------- safety net ----------------
+   Phaser re-arms requestAnimationFrame only AFTER a frame finishes, so ONE exception anywhere in a frame freezes the whole screen for good
+   (the on-screen buttons keep working, the game just stops). Guard the frame callback, remember what went wrong, and recover from stalls. */
+RK.report = (e) => {
+  try {
+    const m = String((e && e.message) || e || 'error'); RK._seen = RK._seen || {}; if (RK._seen[m]) return; RK._seen[m] = 1;
+    const rec = { m, st: String((e && e.stack) || '').split('\n').slice(0, 3).join(' | ').slice(0, 300), t: Date.now(), b: RK.build, ua: navigator.userAgent.slice(0, 90) };
+    LS.set('rk_lasterr', JSON.stringify(rec)); console.warn('[rk]', rec);
+    let d = document.getElementById('rk-err'); if (!d) { d = document.createElement('div'); d.id = 'rk-err'; (document.getElementById('stage') || document.body).appendChild(d); }
+    d.textContent = '⚠ ' + m.slice(0, 110); d.classList.add('on'); clearTimeout(RK._et); RK._et = setTimeout(() => d.classList.remove('on'), 9000);
+  } catch (x) {}
+};
+window.addEventListener('error', e => RK.report(e.error || e.message));
+window.addEventListener('unhandledrejection', e => RK.report(e.reason));
+RK.crash = (msg) => {
+  if (document.getElementById('rk-crash')) return;
+  const c = document.createElement('div'); c.id = 'rk-crash'; c.innerHTML = '<div><b></b><button type="button">↻ 다시 불러오기</button></div>'; c.querySelector('b').textContent = msg;
+  c.querySelector('button').addEventListener('click', () => location.reload()); (document.getElementById('stage') || document.body).appendChild(c);
+};
+RK.guard = game => {
+  let last = performance.now(), wrapped = null, tries = 0;
+  const wrap = () => {
+    const l = game.loop, cb = l && l.callback; if (!cb || cb === wrapped) return;
+    wrapped = function (t, d) { last = performance.now(); try { return cb.call(this, t, d); } catch (e) { RK.report(e); } };
+    l.callback = wrapped;
+  };
+  setTimeout(wrap, 400); setTimeout(wrap, 1500); setInterval(wrap, 5000);
+  setInterval(() => {
+    if (document.hidden || !game.loop || !game.loop.running) { last = performance.now(); return; }
+    if (performance.now() - last < 2600) { tries = 0; return; }
+    // the frame loop stalled: try to restart it once, then ask for a reload
+    if (tries++ === 0) { try { game.loop.stop(); game.loop.start(game.step.bind(game)); wrapped = null; wrap(); last = performance.now(); RK.report('화면 멈춤 감지 → 자동 복구 시도'); } catch (e) { RK.crash('화면이 멈췄어요'); } }
+    else RK.crash('화면이 멈췄어요');
+  }, 1300);
+  try { game.canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); RK.report('webgl context lost'); RK.crash('그래픽이 멈췄어요'); }); } catch (e) {}
+};
+document.addEventListener('DOMContentLoaded', () => {   // show the last remembered problem on the title screen (so a screenshot tells us what happened)
+  const b = document.querySelector('.build'), raw = LS.get('rk_lasterr', ''); if (!b || !raw) return;
+  try { const r = JSON.parse(raw); b.textContent += ' · 마지막 오류: ' + String(r.m).slice(0, 60); b.title = r.st; } catch (e) {}
+});
+
+/* ---------------- iPhone Safari: tell people how to get a full-screen, address-bar-free game ---------------- */
+document.addEventListener('DOMContentLoaded', () => {
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent), standalone = window.navigator.standalone === true || (window.matchMedia && matchMedia('(display-mode: standalone)').matches);
+  const inner = document.querySelector('#title .title-inner'); if (!ios || standalone || !inner || document.getElementById('a2hs')) return;
+  const d = document.createElement('div'); d.id = 'a2hs'; d.innerHTML = '📲 <b>더 크게 하려면</b> 공유 버튼 → <b>"홈 화면에 추가"</b> 후 그 아이콘으로 실행하세요 (주소창 없이 전체화면)';
+  const b = inner.querySelector('.build'); inner.insertBefore(d, b || null);
+});
+
+/* ---------------- no double-tap / pinch zoom (iOS Safari ignores user-scalable=no; mashing a button used to zoom the page in) ---------------- */
+let lastTouchEnd = 0;
+document.addEventListener('touchend', e => { const n = Date.now(); if (n - lastTouchEnd < 320 && !(e.target && e.target.closest && e.target.closest('input,textarea,select'))) e.preventDefault(); lastTouchEnd = n; }, { passive: false });
+['gesturestart', 'gesturechange', 'gestureend'].forEach(t => document.addEventListener(t, e => e.preventDefault()));
+
 /* ---------------- UI helpers ---------------- */
 const $ = id => document.getElementById(id);
 const host = () => $('stage') || document.body;
@@ -127,6 +181,25 @@ const ui = RK.ui = {
     if (!el) return; const t0 = performance.now(), from = 0; to = Number(to) || 0;
     const tick2 = now => { const p = Math.min(1, (now - t0) / ms), e = 1 - Math.pow(1 - p, 3); el.textContent = fmt(Math.round(from + (to - from) * e)); if (p < 1) requestAnimationFrame(tick2); };
     requestAnimationFrame(tick2);
+  },
+  /* letterbox bars for cut-scenes */
+  cine(on) {
+    let c = $('rk-cine'); if (!c) { c = ui.el('rk-cine'); c.innerHTML = '<i class="t"></i><i class="b"></i>'; }
+    void c.offsetWidth; c.classList.toggle('on', !!on);
+  },
+  /* full-screen story cards (tap to skip to the next one) */
+  cards(list, done) {
+    const box = ui.el('rk-cards'); box.innerHTML = '<div class="cd"><div class="k"></div><div class="t"></div><div class="s"></div></div><div class="tip">탭하면 다음</div>'; box.classList.add('on');
+    const cd = box.firstChild; let i = -1, to = null, closed = false;
+    const finish = () => { if (closed) return; closed = true; clearTimeout(to); box.classList.remove('on'); setTimeout(() => { box.remove(); if (done) done(); }, 520); };
+    const next = () => {
+      clearTimeout(to); i++; if (i >= list.length) return finish();
+      cd.classList.remove('show'); setTimeout(() => {
+        const c = list[i]; cd.querySelector('.k').textContent = c.k || ''; cd.querySelector('.t').textContent = c.t || ''; cd.querySelector('.s').textContent = c.s || '';
+        void cd.offsetWidth; cd.classList.add('show'); to = setTimeout(next, c.ms || 3200);
+      }, i ? 380 : 0);
+    };
+    box.onclick = () => next(); next();
   },
   bounce(el) { if (!el) return; el.classList.remove('rk-bounce'); void el.offsetWidth; el.classList.add('rk-bounce'); },
   hurt() { const v = ui.el('rk-hurt'); if (v.animate) v.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 560, easing: 'ease-out' }); else { v.classList.remove('flash'); void v.offsetWidth; v.classList.add('flash'); setTimeout(() => v.classList.remove('flash'), 60); } },

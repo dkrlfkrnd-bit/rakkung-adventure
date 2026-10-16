@@ -70,3 +70,34 @@ body.touch #joy-knob{transition:transform .04s linear}
 
 /* ---- new-version pill ---- */
 #rk-update{position:absolute;left:50%;top:max(10px,env(safe-area-inset-top));transform:translateX(-50%);z-index:60;border:2px solid #fff6e4;border-radius:999px;padding:8px 18px;font:inherit;font-size:15px;color:#2a2140;background:linear-gradient(180deg,#ffe28a,#ffb92e);box-shadow:0 5px 0 #b5801c,0 10px 24px rgba(0,0,0,.4);cursor:pointer;animation:rkTitleIn .5s var(--rk-ease) both}
+
+/* ---- iOS: no double-tap zoom ---- */
+html,body{touch-action:manipulation;-webkit-touch-callout:none}
+
+/* ---- cut-scene letterbox ---- */
+#rk-cine{position:absolute;inset:0;pointer-events:none;z-index:24}
+#rk-cine i{position:absolute;left:0;right:0;height:13%;background:#05030c;transition:transform .7s cubic-bezier(.3,.8,.3,1)}
+#rk-cine .t{top:0;transform:translateY(-101%)}#rk-cine .b{bottom:0;transform:translateY(101%)}
+#rk-cine.on .t,#rk-cine.on .b{transform:none}
+
+/* ---- story cards ---- */
+#rk-cards{position:absolute;inset:0;z-index:44;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;cursor:pointer;opacity:0;transition:opacity .5s ease;background:radial-gradient(ellipse at center,rgba(40,26,70,.92),rgba(8,5,18,.98))}
+#rk-cards.on{opacity:1}
+#rk-cards .cd{opacity:0;transform:translateY(18px) scale(.97);transition:opacity .55s ease,transform .7s cubic-bezier(.2,1.2,.4,1)}
+#rk-cards .cd.show{opacity:1;transform:none}
+#rk-cards .k{font-size:clamp(11px,1.8vw,16px);letter-spacing:.5em;color:var(--gold,#ffcf5a);margin-bottom:10px}
+#rk-cards .t{font-size:clamp(26px,6vw,64px);line-height:1.15;color:#fff;text-shadow:0 4px 0 #6b3fa0,0 10px 30px rgba(0,0,0,.6)}
+#rk-cards .s{margin-top:14px;font-size:clamp(13px,2.4vw,22px);color:rgba(255,246,228,.85)}
+#rk-cards .tip{position:absolute;bottom:max(14px,env(safe-area-inset-bottom));left:0;right:0;font-size:12px;color:rgba(255,255,255,.35)}
+#rk-banner.win .k{color:#9dffb6}
+#rk-banner.win{background:linear-gradient(90deg,rgba(8,40,26,0),rgba(10,50,32,.82) 18%,rgba(10,50,32,.82) 82%,rgba(8,40,26,0))}
+
+#a2hs{margin-top:8px;max-width:min(520px,92vw);margin-left:auto;margin-right:auto;font-size:12px;line-height:1.5;color:rgba(255,246,228,.75);background:rgba(255,255,255,.08);border-radius:12px;padding:6px 12px}
+#a2hs b{color:#ffe28a;font-weight:400}
+@media (max-height:480px) and (orientation:landscape){#a2hs{font-size:10px;margin-top:3px;padding:3px 10px}}
+
+/* ---- error toast / crash overlay ---- */
+#rk-err{position:absolute;left:10px;bottom:10px;max-width:70%;z-index:70;background:rgba(120,20,30,.88);color:#fff;font-size:12px;padding:6px 10px;border-radius:10px;opacity:0;pointer-events:none;transition:opacity .3s}
+#rk-err.on{opacity:1}
+#rk-crash{position:absolute;inset:0;z-index:80;display:flex;align-items:center;justify-content:center;background:rgba(10,6,22,.86);text-align:center;color:#fff;font-size:20px}
+#rk-crash button{display:block;margin:14px auto 0;padding:10px 22px;border-radius:14px;border:3px solid #fff6e4;background:linear-gradient(180deg,#ffe28a,#ffb92e);color:#2a2140;font:inherit;font-size:18px;box-shadow:0 5px 0 #b5801c}

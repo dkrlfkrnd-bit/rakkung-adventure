@@ -226,6 +226,7 @@ class Game extends Phaser.Scene {
     document.querySelectorAll('#ch-pick button').forEach(b => b.addEventListener('click', () => g().startFromChapter(+b.dataset.ch)));
     addEventListener('pagehide', () => g() && g().saveGame()); document.addEventListener('visibilitychange', () => { if (document.hidden && g()) g().saveGame(); });
     $('btn-resume').addEventListener('click', () => g().togglePause(false));
+    $('btn-hq').addEventListener('click', () => { const gg = g(); gg.togglePause(false); gg.hero.gx = 13.5; gg.hero.gy = 13.5; gg.syncHero(); gg.cameras.main.centerOn(gg.camTarget.x, gg.camTarget.y); gg.toast('본부로 돌아왔다', 1400); });
     $('btn-restart').addEventListener('click', () => g().restart());
     $('btn-again').addEventListener('click', () => g().restart());
     $('btn-continue').addEventListener('click', () => g().continuePlay());
@@ -953,6 +954,14 @@ class Game extends Phaser.Scene {
     this.burst(sx(this.hero.gx, this.hero.gy), sy(this.hero.gx, this.hero.gy) - 120, ['❤️', '🍗', '🎉', '⭐'], 26);
     this.toast('의뢰 완료: 사라진 치킨 간식 🍗 +60 XP', 3500);
   }
+  gradeFor() { const st = this.stat || { dmg: 0, deaths: 0 }, r = st.dmg / Math.max(1, this.maxHp); if (!st.deaths && r < .8) return 'S'; if (!st.deaths && r < 1.8) return 'A'; if (st.deaths <= 1 && r < 3.5) return 'B'; return 'C'; }
+  fillChapterExtras(ch) {
+    const C = ch > 1 ? this.chapterInfo(ch) : null, st = this.stat || { dmg: 0, deaths: 0 }, g = this.gradeFor();
+    const next = { 1: '챕터 2 — 캣 패밀리가 창고 지구를 노린다', 2: '챕터 3 — 스카이 크루가 중앙공원을 노린다', 3: '챕터 4 — 땅 밑 언더그라운드가 움직인다', 4: 'THE END — 도시는 이제 라꿍이의 것이다' }[ch];
+    const gl = $('clear-grade'); if (gl) { gl.className = 'grade g-' + g; gl.firstChild.textContent = g; void gl.offsetWidth; gl.classList.add('stamp'); }
+    const ex = $('clear-extra'); if (ex) ex.innerHTML = (C ? '<div>📍 해방 · <b>' + C.zonesText + '</b> &nbsp; 🎁 +' + C.score + '점 · +' + C.xp + ' XP</div>' : '') + '<div>🛡 받은 피해 <b>' + st.dmg + '</b> · 쓰러짐 <b>' + st.deaths + '</b>회</div><div class="nx">' + (ch < 4 ? '▶ NEXT · ' : '★ ') + next + '</div>';
+    const cb = $('btn-continue'); if (cb) cb.innerHTML = (ch < 4 ? '다음 챕터로' : '자유 탐험하기') + ' <small>Enter</small>';
+  }
   showChapterDone(ch = 1) {
     this.happyUntil = this.time.now + 1800; this.playCustom('happy', this.lastDir, 1.2);
     const CH = { 1: ['CHAPTER 1 CLEAR', '첫 번째 전투를 이겼다!', '"…캣 패밀리, 이제 시작이다. 도시는 우리가 되찾는다."'], 2: ['CHAPTER 2 CLEAR', '돈 캣을 쓰러뜨렸다!', '"캣 패밀리는 무너졌다. 다음은… 하늘을 노리는 스카이 크루다."'], 3: ['CHAPTER 3 CLEAR', '구구 대장을 쓰러뜨렸다!', '"스카이 크루는 무너졌다. 이제 땅 밑의 언더그라운드만 남았다."'], 4: ['ALL CLEAR · THE END', '도시를 되찾았다!', '"캣 패밀리, 스카이 크루, 언더그라운드… 이 도시의 보스는 라꿍이다."'] }[ch] || [];
@@ -963,7 +972,7 @@ class Game extends Phaser.Scene {
       $('res-time').textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
       $('res-rank').textContent = `${this.kills || 0}마리`;
       if (window.RK) { RK.ui.countUp($('res-score'), this.score, 1100); RK.ui.countUp($('res-rank'), this.kills || 0, 900, v => v + '마리'); }
-      this.state = 'complete'; $('complete').classList.remove('hidden'); Sfx.fanfare();
+      this.fillChapterExtras(ch); this.state = 'complete'; $('complete').classList.remove('hidden'); Sfx.fanfare();
       const box = $('confetti'); box.innerHTML = '';
       for (let i = 0; i < 40; i++) { const s = document.createElement('div'); s.className = 'conf'; s.textContent = ['🎉', '⭐', '🐾', '❤️', '✨'][i % 5]; s.style.left = Math.random() * 100 + '%'; s.style.animationDuration = 3 + Math.random() * 3 + 's'; s.style.animationDelay = Math.random() * 2 + 's'; box.appendChild(s); }
     });
@@ -1074,10 +1083,10 @@ window.addEventListener('load', () => {
   const game = new Phaser.Game({
     type: Phaser.AUTO, parent: 'game', width: VIEW_W, height: VIEW_H, backgroundColor: '#8fd46c',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
-    fps: { forceSetTimeOut: location.search.includes('test'), target: 60 },
+    fps: { forceSetTimeOut: location.search.includes('test'), target: 60, limit: location.search.includes('test') ? 0 : 60 },
     render: { antialias: true, pixelArt: false, roundPixels: false },
     scene: [Boot, Game],
   });
-  window.__phaser = game;
+  window.__phaser = game; if (window.RK) RK.guard(game);
 });
 })();

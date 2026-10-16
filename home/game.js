@@ -186,7 +186,7 @@ function stage3() {
   hint(E, 6100, '"여긴 우리 구역이다냥!" — 고양이 대장 돈 캣이 길을 막는다!', '"여긴 우리 구역이다냥!" — 고양이 대장 돈 캣이 길을 막는다!');
   E.push({ k: 'dump', x: 700 }, { k: 'barrel', x: 1100 }, { k: 'crate', x: 2000 }, { k: 'bench', x: 2500 }, { k: 'dump', x: 3350 }, { k: 'barrel', x: 5200 }, { k: 'crate', x: 5450 });
   E.push({ k: 'brick', x: 1300 - 70, y: 150, n: 3 }, { k: 'brick', x: 2300, y: 160, n: 3 }, { k: 'brick', x: 2900 - 35, y: 70, n: 1 }, { k: 'brick', x: 1500 - 35, y: 70, n: 1 }, { k: 'brick', x: 5700 - 35, y: 70, n: 1 }, { k: 'brick', x: 5000, y: 150, n: 3 });
-  E.push({ k: 'mover', x: 3700, y: 80, n: 2, dx: 120, dur: 3400, phase: 0 }, { k: 'mover', x: 3970, y: 110, n: 2, dx: 120, dur: 3200, phase: .5 }, { k: 'mover', x: 4260, y: 80, n: 2, dx: 120, dur: 3300, phase: .25 });
+  E.push({ k: 'mover', x: 3690, y: 80, n: 3, dx: 90, dur: 3800, phase: 0 }, { k: 'mover', x: 3950, y: 100, n: 3, dx: 90, dur: 3600, phase: .5 }, { k: 'mover', x: 4210, y: 80, n: 3, dx: 90, dur: 3700, phase: .25 }, { k: 'mover', x: 4440, y: 100, n: 2, dx: 70, dur: 3500, phase: .75 });
   E.push({ k: 'spring', x: 2050 });
   [[800, 200], [2250, 250], [3300, 150], [5000, 200], [6400, 100]].forEach(([x, r]) => E.push({ k: 'cat', x, r }));
   [[1000, 180], [2500, 200], [5250, 200]].forEach(([x, r]) => E.push({ k: 'mouse', x, r }));
@@ -200,7 +200,7 @@ function stage3() {
   E.push({ k: 'letter', x: 1300, y: 250, ch: '라', i: 0 }, { k: 'letter', x: 2400, y: 255, ch: '꿍', i: 1 }, { k: 'letter', x: 5100, y: 245, ch: '이', i: 2 });
   E.push({ k: 'cage', x: 4800, m: 'elephant' });
   E.push({ k: 'boss', x: 7000 });
-  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 4650 }, { k: 'check', x: 5900 });
+  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 3560 }, { k: 'check', x: 4650 }, { k: 'check', x: 5900 });
   return { name: 'STAGE 3 · 강변', bg: 'bg_river', groundLine: 795, width: 7600, ground: [[0, 1400], [1600, 2800], [3000, 3600], [4600, 5600], [5800, 7600]], pit: 'water', spawn: 300, goalX: 7400, entities: E,
     boss: { x: 7000, arenaX: 6150, arenaR: 7560 }, quote: '"강변을 건넜지만… 해가 지고 밤이 왔다. 아직 집은 멀다."' };
 }
@@ -275,7 +275,7 @@ function stage6() {   // moonlit river, boss: 치즈 왕
   E.push({ k: 'letter', x: 1300, y: 250, ch: '라', i: 0 }, { k: 'letter', x: 2355, y: 255, ch: '꿍', i: 1 }, { k: 'letter', x: 5155, y: 245, ch: '이', i: 2 });
   E.push({ k: 'cage', x: 3400, m: 'eagle' }, { k: 'cage', x: 5300, m: 'elephant' });
   E.push({ k: 'boss', x: 7500 });
-  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 5000 }, { k: 'check', x: 6150 });
+  E.push({ k: 'check', x: 1800 }, { k: 'check', x: 3050 }, { k: 'check', x: 3640 }, { k: 'check', x: 5000 }, { k: 'check', x: 6150 });
   return { name: 'STAGE 6 · 달빛 강변', bg: 'bg_river', groundLine: 795, width: 8200, ground: [[0, 1400], [1600, 2700], [2900, 3700], [4900, 5700], [5900, 8200]], pit: 'water', spawn: 300, goalX: 7950, entities: E,
     boss: { kind: 'mouse', x: 7500, arenaX: 6400, arenaR: 8060 }, fx: { tint: 0x5a68b0, lantern: true }, quote: '"드디어 집이다! 라꿍이는 따뜻한 집으로 돌아왔다."' };
 }
@@ -337,6 +337,13 @@ class Play extends Phaser.Scene {
     const g = this.make.graphics({ x: 0, y: 0, add: false });
     g.fillStyle(0xffffff, 1); g.fillCircle(8, 8, 8); g.generateTexture('dot', 16, 16); g.clear();
     g.fillStyle(0xfff2b0, 1); g.fillCircle(6, 6, 6); g.generateTexture('glow', 12, 12); g.destroy();
+    { // water for pits: gradient, ripples and a bright foam line (tiles seamlessly and scrolls)
+      const wt = this.textures.createCanvas('waterTex', 256, 160), wx = wt.getContext(), wg = wx.createLinearGradient(0, 0, 0, 160);
+      wg.addColorStop(0, '#79c2f5'); wg.addColorStop(.1, '#3f86d6'); wg.addColorStop(.45, '#1f4f98'); wg.addColorStop(1, '#0b1d4a'); wx.fillStyle = wg; wx.fillRect(0, 0, 256, 160);
+      wx.lineWidth = 3; for (let r = 0; r < 4; r++) { wx.strokeStyle = 'rgba(200,236,255,' + (.5 - r * .09) + ')'; wx.beginPath(); for (let x = 0; x <= 256; x += 8) { const y = 16 + r * 32 + Math.sin(x / 256 * Math.PI * 2 * (1 + r % 2)) * 5; if (x) wx.lineTo(x, y); else wx.moveTo(x, y); } wx.stroke(); }
+      wx.fillStyle = 'rgba(255,255,255,.85)'; for (let x = 0; x < 256; x += 16) { wx.beginPath(); wx.ellipse(x + 6, 3, 9, 3, 0, 0, 7); wx.fill(); }
+      wt.refresh();
+    }
     const sl = this.textures.createCanvas('softlight', 256, 256), c2 = sl.getContext(), gr = c2.createRadialGradient(128, 128, 0, 128, 128, 128); gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(.35, 'rgba(255,255,255,.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); c2.fillStyle = gr; c2.fillRect(0, 0, 256, 256); sl.refresh();
   }
 
@@ -345,6 +352,7 @@ class Play extends Phaser.Scene {
     const on = (id, fn) => { const e = $(id); if (e) e.addEventListener('click', ev => { Sfx.resume(); fn(ev); }); };
     on('btn-pause', () => this.togglePause());
     on('btn-resume', () => this.togglePause());
+    on('btn-cp', () => { this.togglePause(); this.respawn(); this.toast('체크포인트에서 다시 시작!', 1200); });
     on('btn-retry', () => this.fade(() => this.startStage(this.stageIdx, true)));
     on('btn-menu', () => this.fade(() => this.toMenu()));
     on('btn-next', () => this.fade(() => { if (this.stageIdx < 5) this.startStage(this.stageIdx + 1, false); else this.toMenu(); }));
@@ -380,7 +388,7 @@ class Play extends Phaser.Scene {
     this.cols.forEach(c => c.destroy()); this.cols = [];
     this.objs.forEach(o => { try { o.destroy(); } catch (e) {} }); this.objs = [];
     ['gGround', 'gSolid', 'gOne', 'gMove', 'gEnemy', 'gItem', 'gApple', 'gHaz', 'gSpring'].forEach(k => { if (this[k]) { this[k].clear(true, true); this[k].destroy(); } this[k] = null; });
-    this.cages = []; this.parked = []; this.enemies = []; this.checks = []; this.hints = []; this.movers = []; this.boss = null; this.mount = null;
+    this.cages = []; this.parked = []; this.enemies = []; this.checks = []; this.hints = []; this.movers = []; this.pitFalls = {}; this.waters = []; this.stuck = { x: -9999, t: 0, said: 0 }; this.boss = null; this.mount = null;
     if (this.hero) { this.hero.destroy(); this.hero = null; }
   }
   add2(o, depth) { if (depth !== undefined) o.setDepth(depth); this.objs.push(o); return o; }
@@ -446,10 +454,19 @@ class Play extends Phaser.Scene {
     this.updateHudStatic();
   }
 
+  /* striped warning post at a pit edge, with a pulsing red lamp */
+  edgePost(x) {
+    this.add2(this.add.rectangle(x, FLOOR + 6, 8, 52, 0xffcf5a), 4.2);
+    [0, 1].forEach(i => this.add2(this.add.rectangle(x, FLOOR - 10 + i * 20, 8, 8, 0x2a2140), 4.3));
+    const l = this.add2(this.add.image(x, FLOOR - 24, 'glow').setScale(2.1).setTint(0xff5a4a).setAlpha(.6).setBlendMode(Phaser.BlendModes.ADD), 4.4);
+    this.tweens.add({ targets: l, alpha: .12, duration: 520, yoyo: true, repeat: -1 });
+  }
   makePit(x0, x1, style) {
     const w = x1 - x0, cx = (x0 + x1) / 2;
+    this.edgePost(x0 + 14); this.edgePost(x1 - 14);
     if (style === 'water') {
-      this.add2(this.add.rectangle(cx, FLOOR + 80, w, 160, 0x1d3f73), 1.5);
+      const wt = this.add2(this.add.tileSprite(x0, FLOOR, w, 160, 'waterTex').setOrigin(0, 0), 1.5); (this.waters = this.waters || []).push(wt);
+      this.add2(this.add.rectangle(x0 + 5, FLOOR + 80, 10, 160, 0x000000, .35), 1.55); this.add2(this.add.rectangle(x1 - 5, FLOOR + 80, 10, 160, 0x000000, .35), 1.55);
       const hi = this.add2(this.add.rectangle(cx, FLOOR + 8, w, 14, 0x6fb7ff, .55), 1.6);
       this.tweens.add({ targets: hi, alpha: .15, duration: 900 + Math.random() * 500, yoyo: true, repeat: -1 });
       for (let i = 0; i < Math.floor(w / 140); i++) { const r = this.add2(this.add.rectangle(x0 + 60 + i * 140, FLOOR + 40 + (i % 3) * 22, 70, 6, 0xaee0ff, .35), 1.6); this.tweens.add({ targets: r, x: r.x + 30, alpha: .08, duration: 1100 + i * 90, yoyo: true, repeat: -1 }); }
@@ -478,13 +495,19 @@ class Play extends Phaser.Scene {
       case 'bench': { this.add2(this.add.image(e.x, base, 'plat_bench').setOrigin(.5, 1).setDisplaySize(190, 122), 4); const z = this.box(this.gOne, e.x, base - 57 + 7, 150, 14); z.body.checkCollision.down = z.body.checkCollision.left = z.body.checkCollision.right = false; break; }
       case 'brick': {
         for (let i = 0; i < e.n; i++) this.add2(this.add.image(e.x + i * 70 + 35, STAND - e.y, 'plat_brick').setOrigin(.5, 0).setDisplaySize(72, 72), 4);
+        this.add2(this.add.rectangle(e.x + e.n * 35, STAND - e.y + 2, e.n * 70, 4, 0xffe9a8, .9), 4.1);
         const z = this.box(this.gOne, e.x + e.n * 35, STAND - e.y + 7, e.n * 70, 14); z.body.checkCollision.down = z.body.checkCollision.left = z.body.checkCollision.right = false; break;
       }
       case 'mover': {
         const vis = []; for (let i = 0; i < e.n; i++) vis.push(this.add2(this.add.image(0, 0, 'plat_brick').setOrigin(.5, 0).setDisplaySize(72, 72), 4));
         const z = this.add.rectangle(e.x + e.n * 35, STAND - e.y + 7, e.n * 70, 14).setVisible(false); this.physics.add.existing(z); z.body.setImmovable(true).setAllowGravity(false);
         z.body.checkCollision.down = z.body.checkCollision.left = z.body.checkCollision.right = false; this.gMove.add(z); this.objs.push(z);
-        this.movers.push({ z, vis, e, x0: e.x + e.n * 35, px: z.x, t: (e.phase || 0) * e.dur }); break;
+        const mv = { z, vis, e, x0: e.x + e.n * 35, px: z.x, t: (e.phase || 0) * e.dur };
+        // moving platforms glow and carry a bright top edge so they read clearly against the scenery
+        mv.halo = this.add2(this.add.image(z.x, z.y, 'glow').setScale(e.n * 11.5, 5).setAlpha(.3).setTint(0xffe28a).setBlendMode(Phaser.BlendModes.ADD), 3.9);
+        mv.edge = this.add2(this.add.rectangle(z.x, z.y - 5, e.n * 70, 4, 0xffe9a8, .95), 4.1);
+        this.tweens.add({ targets: mv.halo, alpha: .12, duration: 700, yoyo: true, repeat: -1 });
+        this.movers.push(mv); break;
       }
       case 'spring': { const im = this.add2(this.add.image(e.x, base, 'spring_mushroom').setOrigin(.5, 1).setDisplaySize(72, 73), 4.5); const z = this.box(this.gSpring, e.x, base - 50, 60, 24); z.im = im; z.base = base; break; }
       case 'cone': { this.add2(this.add.image(e.x, base, 'hazard_cone').setOrigin(.5, 1).setDisplaySize(44, 58), 4.5); const z = this.add.rectangle(e.x, base - 26, 30, 50).setVisible(false); this.physics.add.existing(z); z.body.setAllowGravity(false); this.gHaz.add(z); this.objs.push(z); break; }
@@ -589,9 +612,11 @@ class Play extends Phaser.Scene {
   updateMovers(dt) {
     this.movers.forEach(m => {
       m.dx = m.z.x - m.px; m.px = m.z.x;                         // how far the physics step moved it last frame (riders get carried by this)
-      m.t += dt * 1000; const nx = m.x0 + Math.sin((m.t / m.e.dur) * Math.PI * 2) * m.e.dx;
-      m.z.body.setVelocityX((nx - m.z.x) / Math.max(dt, .008));   // chase the target position with the physics body (no manual teleporting)
+      m.t += dt * 1000; const w = Math.PI * 2 / m.e.dur, nx = m.x0 + Math.sin(m.t * w) * m.e.dx, vx = Math.cos(m.t * w) * w * 1000 * m.e.dx;
+      // velocity follows the sine exactly; a soft pull toward the target keeps it in phase. (The old "chase" formula depended on the frame rate.)
+      if (Math.abs(nx - m.z.x) > 140) m.z.body.reset(nx, m.z.y); else m.z.body.setVelocityX(vx + (nx - m.z.x) * 8);
       m.vis.forEach((v, i) => v.setPosition(m.z.x - (m.e.n * 35) + i * 70 + 35, m.z.y - 7));
+      if (m.halo) { m.halo.setPosition(m.z.x, m.z.y + 2); m.edge.setPosition(m.z.x, m.z.y - 5); }
     });
   }
 
@@ -820,7 +845,7 @@ class Play extends Phaser.Scene {
     if (this.boss && this.boss.hp > 0) this.physics.overlap(this.gApple, this.boss.spr, a => { if (a.active) { this.hitBoss(1, Math.sign(a.body.velocity.x)); a.destroy(); } });
     this.physics.overlap(sp, this.gHaz, () => this.hurt(null, 1));
     this.physics.overlap(sp, this.gSpring, (p, z) => { if (b.velocity.y > 60 && b.bottom < z.body.top + 28) { b.setVelocityY(-1180); Sfx.spring(); if (z.im) this.tweens.add({ targets: z.im, scaleY: z.im.scaleY * .7, scaleX: z.im.scaleX * 1.2, duration: 90, yoyo: true }); } });
-    this.gApple.getChildren().forEach(a => { a.life -= 1 / 60; if (a.life <= 0 || a.bounces > 2) { if (a.active) a.destroy(); } });
+    const adt = Math.min(this.game.loop.delta, 50) / 1000; this.gApple.getChildren().forEach(a => { a.life -= adt; if (a.life <= 0 || a.bounces > 2) { if (a.active) a.destroy(); } });
     // checkpoints
     this.checks.forEach((c, i) => { if (!c.on && sp.x > c.x) { c.on = true; this.cp = { x: c.x, i }; c.flag.setFillStyle(0xffcf5a); Sfx.check(); this.burst(c.x, STAND - 90, 5); this.toast('체크포인트!', 900); } });
     // goal
@@ -850,8 +875,16 @@ class Play extends Phaser.Scene {
     if (m) { m.hp -= n; this.hudMount(); if (m.hp <= 0) { this.dismount(true); this.invuln = 1.5; } return; }
     this.hp -= n; this.hudHearts(); if (this.hp <= 0) this.die(false);
   }
+  /* after three falls into the same gap, glowing stepping stones appear across it so nobody is stuck for good */
+  pitHelp(px) {
+    const G = this.S.ground; let gi = -1; for (let i = 0; i < G.length - 1; i++) if (px > G[i][1] - 60 && px < G[i + 1][0] + 60) { gi = i; break; }
+    if (gi < 0) return; this.pitFalls = this.pitFalls || {}; this.pitFalls[gi] = (this.pitFalls[gi] || 0) + 1; if (this.pitFalls[gi] !== 3) return;
+    const x0 = G[gi][1], x1 = G[gi + 1][0]; let i = 0;
+    for (let x = x0 + 70; x < x1 - 150; x += 215, i++) { this.spawnEntity({ k: 'brick', x, y: i % 2 ? 85 : 55, n: 2 }); this.burst(x + 70, STAND - (i % 2 ? 85 : 55), 3); }
+    this.toast('도우미 발판이 생겼어요! 🧱', 2400); Sfx.check();
+  }
   fellInPit() {
-    if (this.dead) return; Sfx.hurt(); if (window.RK) { RK.ui.hurt(); RK.vibrate(60); }
+    if (this.dead) return; this.pitHelp(this.active.x); Sfx.hurt(); if (window.RK) { RK.ui.hurt(); RK.vibrate(60); }
     if (this.mount) { const mt = this.mount; this.mount = null; this.hero.setScale(.88).setAngle(0); this.hero.body.enable = true; this.cameras.main.startFollow(this.hero, true, .12, .1); mt.sp.destroy(); this.hudMount(); this.reopenCages(mt.kind); }
     this.hp -= 1; this.hudHearts();
     if (this.hp <= 0) { this.die(true); return; }
@@ -938,6 +971,10 @@ class Play extends Phaser.Scene {
     b.classList.remove('hidden'); b.textContent = m.kind === 'elephant' ? '🐘 코끼리' : '🦅 독수리'; let s = ''; for (let i = 0; i < m.maxHp; i++) s += `<img src="assets/item_heart.webp" class="${i < m.hp ? '' : 'off'}" alt="">`; hs.innerHTML = s;
   }
   updateWorldBits(dt) {
+    if (this.waters) this.waters.forEach(t => { t.tilePositionX += dt * 26; });
+    // stuck for a long time on foot? point at the escape hatch (the pause menu can restart from the last checkpoint)
+    { const st = this.stuck, spx = this.active.x; if (Math.abs(spx - st.x) > 40 || this.bossActive) { st.x = spx; st.t = 0; } else st.t += dt;
+      if (st.t > 14 && this.time.now > st.said) { st.said = this.time.now + 45000; this.toast('막혔나요? ⏸ 일시정지 → "체크포인트에서 다시"', 3200); } }
     // stars drift toward the dog when close (feel only; the normal overlap still does the pickup)
     if (!this.finished && !this.dead) { const sp0 = this.active; this.gItem.getChildren().forEach(it => { if (it.kind !== 'star' || !it.active) return; const dx = sp0.x - it.x, dy = sp0.y - 50 - it.y, d = Math.hypot(dx, dy); if (d < 150 && d > 2) { if (!it.mag) { it.mag = true; this.tweens.killTweensOf(it); } const k = Math.min(1, dt * (6 + (150 - d) / 10)); it.x += dx * k; it.y += dy * k; } }); }
     if (this.lantern) this.lantern.setPosition(this.active.x, this.active.y - 70);
@@ -984,10 +1021,10 @@ window.addEventListener('load', () => {
     type: Phaser.AUTO, parent: 'game', width: W, height: H, backgroundColor: '#1a1530',
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
     physics: { default: 'arcade', arcade: { gravity: { y: GRAV }, debug: DEBUG } },
-    fps: { forceSetTimeOut: TEST, target: 60 },
+    fps: { forceSetTimeOut: TEST, target: 60, limit: TEST ? 0 : 60 },
     render: { antialias: true, pixelArt: false, roundPixels: false },
     scene: [Boot, Play],
   });
-  window.__phaser = game;
+  window.__phaser = game; if (window.RK) RK.guard(game);
 });
 })();

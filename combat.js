@@ -35,11 +35,16 @@ window.RKCombat = {
         spots: [[3, 18], [6.5, 17.5], [10, 18.5], [13, 17], [8, 23.5], [12, 23.5]], start: '챕터 4 시작! 언더그라운드가 빵집 거리를 점령했다 📍 미니맵 표시로 가자', bossToast: '보스 · 치즈 왕 🧀', rage: '치즈 왕이 소리친다! 쥐 떼가 몰려온다 🐭', done: '빵집 거리와 중앙광장을 되찾았다! 도시는 이제 라꿍이의 것이다 🏆',
         intro: [['치즈 왕', '🐭', '찍찍! 지하와 이 거리는 언더그라운드 왕국이다!'], ['라꿍이', '🐶', '…쥐가 왕이라니.'], ['치즈 왕', '🐭', '치즈 내놔! 안 내놓으면 물어버린다찍!'], ['라꿍이', '🐶', '(…치즈는 없다.)']] },
     };
+    // finale texts: the boss's last words, the radio call from the crew and what was liberated
+    Object.assign(CH[2], { zonesText: '창고 지구 · 골목 상점가', outro: [['돈 캣', '😼', '크윽… 이럴 수가… 캣 패밀리가 무너지다니옹…'], ['라꿍이', '🐶', '…이제 창고에서 손 떼.'], ['돈 캣', '😼', '알았다옹… 하지만 하늘엔 더 성가신 놈들이 있다. 스카이 크루가… 공원을 노리고 있다옹.'], ['라꿍이', '🐶', '(…하늘?)']], radio: [['똘마니', '🐻', '(무전) 보스!! 창고 지구가 우리 손에 들어왔습니다! 그런데 공원 쪽에서 비둘기 떼가 몰려든다는 보고입니다!'], ['라꿍이', '🐶', '…가자.']] });
+    Object.assign(CH[3], { zonesText: '중앙공원', outro: [['구구 대장', '🦅', '구구… 땅강아지에게 날개가 꺾이다니…'], ['라꿍이', '🐶', '…공원은 돌려받겠다.'], ['구구 대장', '🦅', '가져가라 구구… 하지만 지하의 치즈 왕은 우리처럼 얌전하지 않다.'], ['라꿍이', '🐶', '…기대되는군.']], radio: [['똘마니', '🐻', '(무전) 공원이 해방됐습니다, 보스!! 이제 땅 밑 언더그라운드만 남았습니다!'], ['라꿍이', '🐶', '…마지막이다.']] });
+    Object.assign(CH[4], { zonesText: '빵집 거리 · 중앙광장', outro: [['치즈 왕', '🐭', '찍… 찍… 내 왕국이…'], ['라꿍이', '🐶', '…치즈는 정말 없다.'], ['치즈 왕', '🐭', '…졌다찍. 빵집 거리는 돌려주마. 그런데… 빵 한 조각만 주면 안 되냐찍?'], ['라꿍이', '🐶', '…(고개를 끄덕인다.)']], radio: [['똘마니', '🐻', '(무전) 보스… 해냈습니다… 흑… 이제 이 도시의 보스는… 보스뿐입니다!! (엉엉)'], ['라꿍이', '🐶', '…울지 마. 치킨이나 먹으러 가자.']] });
     const ang = (dx, dy) => Math.atan2(dy, dx);
 
     Object.assign(Game.prototype, {
       /* ================= setup ================= */
       initCombat() {
+        this.anims.globalTimeScale = 1; this.tweens.timeScale = 1; this.stat = { dmg: 0, deaths: 0 };
         this.lvl = 1; this.xp = 0; this.kills = 0; this.cat3Down = 0; this.chDown = { 2: 0, 3: 0, 4: 0 }; this.chStarted = {};
         this.calcStats(); this.hp = this.maxHp;
         this.cd = { bite: 0, dash: 0, bark: 0, crew: 0 };
@@ -125,7 +130,7 @@ window.RKCombat = {
       chapterOf(stage) { return stage >= 12 ? 4 : stage >= 9 ? 3 : stage >= 6 ? 2 : 1; },
       questMark() { for (const k in CH) { const C = CH[k]; if (this.stage === C.stages[0] || this.stage === C.stages[1]) return C.mark; } return null; },
       startChapter(ch, remaining, silent) {
-        const C = CH[ch]; remaining = remaining == null ? C.n : remaining;
+        const C = CH[ch]; remaining = remaining == null ? C.n : remaining; this.stat = { dmg: 0, deaths: 0 };
         this.chDown[ch] = C.n - remaining; this.chStarted[ch] = true; this.setStage(C.stages[0]);
         const z = this.zones.find(q => q.id === C.zone); if (z) { z.owner = C.before; this.redrawMinimapBase(); }
         C.spots.slice(0, remaining).forEach(([gx, gy]) => { const p = this.freeSpot(gx, gy); this.spawnEnemy(C.soldier, p.gx, p.gy, { tag: 'sold' + ch }); });
@@ -205,13 +210,53 @@ window.RKCombat = {
       },
       onBossDown(e) {
         const ch = e.ch || 2, C = CH[ch]; this.setStage(C.stages[2]);
-        C.flip.forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; }); this.redrawMinimapBase();
+        C.flip.forEach(id => { const z = this.zones.find(q => q.id === id); if (z) z.owner = 'rakkung'; });   // data now (so a save is right), the map redraws in the finale
         for (const m of this.enemies) if (m !== e && m.state !== 'dead' && !m.d.inert) { m.hp = 0; m.stunUntil = 0; this.killEnemy(m); }
-        this.score += C.score; this.addXp(C.xp); this.updateHud(); Sfx.fanfare(); this.cameras.main.shake(300, .01); if (window.RK) { RK.music.play('town'); RK.vibrate([60, 40, 60]); }
-        this.toast(C.done, 4200);
-        // keep trying until the clear screen can be shown (paused / busy at that moment must not swallow the hand-over to the next chapter)
-        const showDone = () => { if (this.stage !== C.stages[2]) return; if (this.state === 'play' || this.state === 'dialog') this.showChapterDone(ch); else this.time.delayedCall(700, showDone); };
-        this.time.delayedCall(2200, showDone);
+        this.score += C.score; this.addXp(C.xp); this.updateHud();
+        this.bossFinale(e, ch);
+      },
+      /* boss down: slow motion + camera push-in + letterbox, last words, zones liberated, radio call, (ending cards), result screen */
+      bossFinale(e, ch) {
+        const C = CH[ch], cam = this.cameras.main, z0 = cam.zoom, bx = sx(e.gx, e.gy), by = sy(e.gx, e.gy) - 90, ui = window.RK && RK.ui, wait = (ms, fn) => this.time.delayedCall(ms, fn);
+        this.state = 'cine'; this.dashing = false; this.hero.moving = false; this.invulnUntil = this.time.now + 60000; $('prompt').classList.add('hidden');
+        cam.stopFollow(); cam.flash(280, 255, 255, 255); cam.shake(520, .014);
+        this.tweens.timeScale = .3; this.anims.globalTimeScale = .3;
+        cam.pan(bx, by, 700, Phaser.Math.Easing.Sine.InOut); cam.zoomTo(z0 * 1.3, 700);
+        if (window.RK) { RK.music.stop(); RK.vibrate([80, 40, 140]); } if (ui) ui.cine(true);
+        e.spr.setTintFill(0xffffff); wait(160, () => { if (e.spr.active) e.spr.setTint(0x9a9ab0); });
+        this.floatText(bx, by - 30, 'K.O.!', '#ffe28a', 80); this.burst(bx, by + 40, ['💥', '💫', '⭐', '✨'], 18);
+        Sfx.noise(.5, .14, 200); Sfx.tone(90, .8, 'sawtooth', .12, -40);
+        const dir = e.kv.gx - e.kv.gy >= 0 ? 1 : -1;
+        this.tweens.add({ targets: e.spr, angle: 84 * dir, y: e.spr.y + 8, duration: 700, ease: 'Cubic.in' });
+        wait(1500, () => { this.tweens.timeScale = 1; this.anims.globalTimeScale = 1; Sfx.fanfare(); });
+        wait(2400, () => this.openDialog(C.outro.map(([who, icon, text]) => ({ who, icon, text })), () => {
+          this.state = 'cine';
+          // the boss slinks away
+          this.tweens.add({ targets: e.spr, alpha: 0, y: e.spr.y - 80, duration: 900, ease: 'Cubic.in', onComplete: () => e.spr.destroy() });
+          this.tweens.add({ targets: e.sh, alpha: 0, duration: 900, onComplete: () => e.sh.destroy() });
+          this.burst(bx, by + 30, ['✨', '💫'], 10);
+          wait(900, () => {
+            // zones liberated
+            this.redrawMinimapBase(); cam.zoomTo(z0, 700); cam.startFollow(this.camTarget, true, .06, .06); cam.flash(240, 255, 244, 210);
+            const mm = $('minimap'); if (mm) { mm.classList.remove('pulse'); void mm.offsetWidth; mm.classList.add('pulse'); setTimeout(() => mm.classList.remove('pulse'), 2600); }
+            if (window.RK) { RK.music.play('town'); RK.vibrate([60, 40, 60, 40, 90]); } if (ui) ui.banner('구역 해방', C.zonesText, 'win', 3400);
+            Sfx.fanfare(); this.burst(sx(this.hero.gx, this.hero.gy), sy(this.hero.gx, this.hero.gy) - 90, ['🎉', '⭐', '✨', '🐾', '❤️'], 22);
+          });
+          wait(4300, () => this.openDialog(C.radio.map(([who, icon, text]) => ({ who, icon, text })), () => {
+            this.state = 'cine';
+            const fin = () => { if (ui) ui.cine(false); wait(500, () => this.showChapterDone(ch)); };
+            if (ch === 4 && ui) this.endingCards(fin); else fin();
+          }));
+        }));
+      },
+      endingCards(done) {
+        const secs = Math.floor((this.time.now - this.t0) / 1000), cards = [
+          { k: 'ALL CLEAR', t: '도시를 되찾았다', s: '캣 패밀리 · 스카이 크루 · 언더그라운드' },
+          { k: 'EPILOGUE', t: '이 도시의 보스는…', s: '…꼬리가 짧은 라꿍이.' },
+          { k: 'THE END', t: '라꿍이의 모험', s: '격파 ' + this.kills + '마리 · Lv.' + this.lvl + ' · 플레이 ' + Math.floor(secs / 60) + ':' + String(secs % 60).padStart(2, '0'), ms: 4200 },
+        ];
+        if (this.side < 3) cards.push({ k: 'P.S.', t: '…내 치킨은?', s: '(냥냥 사장님의 의뢰가 아직 남아 있다)' });
+        RK.ui.cards(cards, done);
       },
       refreshBossHud() {
         const B = this.enemies.find(x => x.d.boss && x.state !== 'dead'), bar = $('boss-bar'); if (!bar) return;
@@ -240,8 +285,10 @@ window.RKCombat = {
         e.state = 'dead'; this.kills++;
         e.mark.setVisible(false); e.stars.setVisible(false); e.barBg.setVisible(false); e.barFill.setVisible(false);
         const dir = e.kv.gx - e.kv.gy >= 0 ? 1 : -1;
-        this.tweens.add({ targets: e.spr, angle: 95 * dir, y: e.spr.y + 14, alpha: 0, duration: 900, ease: 'Cubic.in', onComplete: () => { e.spr.destroy(); e.sh.destroy(); } });
-        this.tweens.add({ targets: e.sh, alpha: 0, duration: 900 });
+        if (!e.d.boss) {
+          this.tweens.add({ targets: e.spr, angle: 95 * dir, y: e.spr.y + 14, alpha: 0, duration: 900, ease: 'Cubic.in', onComplete: () => { e.spr.destroy(); e.sh.destroy(); } });
+          this.tweens.add({ targets: e.sh, alpha: 0, duration: 900 });
+        }
         this.burst(sx(e.gx, e.gy), sy(e.gx, e.gy) - 60, ['💫', '⭐'], 6);
         this.floatText(sx(e.gx, e.gy), sy(e.gx, e.gy) - 150, `+${e.d.xp} XP`, '#7dffb0', 26);
         this.score += 100; this.addXp(e.d.xp); this.updateHud();
@@ -348,7 +395,7 @@ window.RKCombat = {
       /* ================= player ================= */
       hurtPlayer(dmg, fromGx, fromGy) {
         const t = this.time.now; if (this.dead || t < this.invulnUntil) return;
-        dmg = Math.round(dmg); this.hp = Math.max(0, this.hp - dmg); this.invulnUntil = t + 750; this.hurtLockUntil = t + 180;
+        dmg = Math.round(dmg); if (this.stat) this.stat.dmg += dmg; this.hp = Math.max(0, this.hp - dmg); this.invulnUntil = t + 750; this.hurtLockUntil = t + 180;
         const dx = this.hero.gx - fromGx, dy = this.hero.gy - fromGy, l = Math.hypot(dx, dy) || 1; this.hurtV = { gx: dx / l * 5, gy: dy / l * 5, until: t + 160 };
         this.dog.setTintFill(0xff4a4a); this.time.delayedCall(110, () => { if (!this.dead) this.dog.clearTint(); });
         this.cameras.main.shake(130, 0.006); if (window.RK) { RK.ui.hurt(); RK.vibrate(45); }
@@ -359,7 +406,7 @@ window.RKCombat = {
       },
       healPlayer(n) { if (this.dead) return; this.hp = Math.min(this.maxHp, this.hp + n); this.floatText(sx(this.hero.gx, this.hero.gy), sy(this.hero.gx, this.hero.gy) - 150, `+${Math.min(n, 999)}`, '#7dffb0', 24); this.refreshCombatHud(this.time.now); },
       playerDown() {
-        this.dead = true; this.dashing = false; this.say('윽… 쓰러졌다…', 2000);
+        this.dead = true; this.dashing = false; if (this.stat) this.stat.deaths++; this.say('윽… 쓰러졌다…', 2000);
         this.dog.stop(); if (!this.playCustom('ko', this.lastDir, 1.5)) { this.tweens.add({ targets: this.dog, angle: 88, duration: 380, ease: 'Cubic.out' }); } this.dog.setTint(0xd0d0e0);
         this.toast('쓰러졌다… 본부에서 깨어난다', 2400);
         this.time.delayedCall(2300, () => {
