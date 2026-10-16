@@ -1,0 +1,244 @@
+{
+ "frameW": 192,
+ "frameH": 192,
+ "cols": 5,
+ "display": 150,
+ "anims": {
+  "idle_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "idle_southwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "idle_left": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "idle_northwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "idle_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "idle_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "idle_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "idle_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "walk_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "walk_southwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "walk_left": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "walk_northwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "walk_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "walk_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "walk_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "walk_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "run_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "run_southwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "run_left": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "run_northwest": {
+   "frames": 25,
+   "fps": 11,
+   "loop": true
+  },
+  "run_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "run_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "run_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "run_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": true
+  },
+  "jump_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "jump_southwest": {
+   "frames": 25,
+   "fps": 15,
+   "loop": false
+  },
+  "jump_left": {
+   "frames": 25,
+   "fps": 15,
+   "loop": false
+  },
+  "jump_northwest": {
+   "frames": 25,
+   "fps": 15,
+   "loop": false
+  },
+  "jump_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "jump_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "jump_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "jump_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "bite_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "bite_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "bite_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "bite_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "bite_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "ko_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "ko_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "ko_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "ko_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "ko_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "happy_down": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "happy_up": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "happy_right": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "happy_northeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  },
+  "happy_southeast": {
+   "frames": 25,
+   "fps": 12,
+   "loop": false
+  }
+ },
+ "ext": "webp"
+}

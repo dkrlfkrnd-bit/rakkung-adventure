@@ -1,0 +1,113 @@
+{
+ "chars": {
+  "bear": {
+   "frameW": 134,
+   "frameH": 224,
+   "anims": {
+    "idle_down": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_southwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_left": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_northwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_up": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_northeast": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_right": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_southeast": {
+     "frames": 25,
+     "fps": 11
+    }
+   }
+  },
+  "cat": {
+   "frameW": 221,
+   "frameH": 224,
+   "anims": {
+    "idle_down": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_southwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_left": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_northwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_up": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_northeast": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_right": {
+     "frames": 25,
+     "fps": 11
+    },
+    "idle_southeast": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_down": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_southwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_left": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_northwest": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_up": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_northeast": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_right": {
+     "frames": 25,
+     "fps": 11
+    },
+    "walk_southeast": {
+     "frames": 25,
+     "fps": 11
+    }
+   }
+  }
+ },
+ "ext": "webp"
+}
