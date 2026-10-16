@@ -15,8 +15,27 @@ const $ = id => document.getElementById(id);
 const sx = (gx, gy) => (gx - gy) * TW / 2;
 const sy = (gx, gy) => (gx + gy) * TH / 2;
 
+/* ---------- visible-viewport fit ----------
+   Phone browsers report 100vh as the height *with* the toolbars hidden, so the bottom of a 100vh stage sits under the
+   address/tool bar. The stage is sized from innerWidth/innerHeight (the visible area) instead and re-fitted on every change. */
+(function fitStage() {
+  let lw = 0, lh = 0;
+  const set = () => {
+    lw = innerWidth; lh = innerHeight;
+    const s = document.documentElement.style;
+    s.setProperty('--app-w', lw + 'px'); s.setProperty('--app-h', lh + 'px');
+    if (window.__phaser && window.__phaser.scale) window.__phaser.scale.refresh();
+  };
+  const later = () => { set(); setTimeout(set, 120); setTimeout(set, 450); };
+  addEventListener('resize', later); addEventListener('orientationchange', later);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', later);
+  // some in-app browsers change the visible height (toolbar show/hide) without a resize event
+  setInterval(() => { if (innerWidth !== lw || innerHeight !== lh) set(); }, 400);
+  set();
+})();
+
 /* ---------- touch / mobile controls ---------- */
-window.__touch = { x: 0, y: 0, mag: 0, j: false, run: false, on: false, joyId: null };
+window.__touch ={ x: 0, y: 0, mag: 0, j: false, run: false, on: false, joyId: null };
 (function setupTouch() {
   const isTouch = (window.matchMedia && matchMedia('(pointer: coarse)').matches) || 'ontouchstart' in window || /[?&]touch=1/.test(location.search);
   document.addEventListener('DOMContentLoaded', () => {

@@ -4,7 +4,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;user-select:none;-webkit-user-select:none}
 html,body{width:100%;height:100%;background:#12111f;overflow:hidden;font-family:"Jua","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;color:var(--cream)}
-#stage{position:relative;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:#12111f}
+#stage{position:fixed;left:0;top:0;width:var(--app-w,100%);height:var(--app-h,100%);display:flex;align-items:center;justify-content:center;background:#12111f}
 #game{position:absolute;inset:0}
 #game canvas{display:block;image-rendering:auto}
 #vignette{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(20,10,40,.38) 100%);z-index:2}
@@ -166,6 +166,11 @@ body.touch #toast{top:64px;font-size:15px;padding:7px 16px;max-width:88vw}
   body.touch .skill{width:56px;height:56px}
   body.touch #skillbar{width:120px}
   body.touch #hud-mini-row{display:none}
+  body.touch #hud-zone{left:max(10px,env(safe-area-inset-left));top:calc(max(10px,env(safe-area-inset-top)) + 66px);transform:none}
+  body.touch #minimap{width:96px;height:72px}
+}
+@media (max-height:340px){
+  body.touch #minimap{left:calc(max(10px,env(safe-area-inset-left)) + 214px);right:auto;top:max(10px,env(safe-area-inset-top));width:88px;height:66px}
 }
 @media (orientation:portrait){
   body.touch #rotate-hint{display:flex;position:absolute;inset:0;z-index:50;background:rgba(14,10,30,.94);align-items:center;justify-content:center;text-align:center;font-size:24px;line-height:1.6}
@@ -177,4 +182,33 @@ body.touch #toast{top:64px;font-size:15px;padding:7px 16px;max-width:88vw}
   .title-sub{font-size:15px;margin:10px 0 14px}
   .panel{padding:22px 24px}
   .stats b{font-size:22px}
+}
+/* short landscape (phones): compact full-screen panels; margin:auto keeps them reachable by scrolling if still too tall */
+@media (max-height:480px) and (orientation:landscape){
+  .screen{overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+  .title-inner,.panel{margin:auto}
+  .title-inner{padding:8px 16px}
+  .title-badge{font-size:10px;padding:3px 10px;margin-bottom:4px}
+  h1{font-size:32px;line-height:1.1;text-shadow:0 3px 0 #6b3fa0,0 6px 18px rgba(0,0,0,.5)}
+  h1 br{display:none}
+  h1 span{margin-left:.22em;text-shadow:0 3px 0 #b5640c,0 6px 18px rgba(0,0,0,.5)}
+  .title-sub{font-size:12px;line-height:1.4;margin:6px 0 8px}
+  #title-loading{font-size:13px;margin:8px 0}
+  .big-btn{font-size:18px;padding:8px 28px;border-radius:14px;box-shadow:0 5px 0 #b5801c,0 10px 20px rgba(0,0,0,.35)}
+  .big-btn.ghost{margin-top:8px}
+  #btn-mode-title{display:none}
+  .mode-btn{margin-top:8px;font-size:12px;padding:5px 12px}
+  .controls{margin-top:8px;gap:4px 8px;font-size:11px}
+  .controls span{padding:3px 9px}
+  .panel{padding:12px 28px}
+  .panel h2{font-size:24px;margin:2px 0 8px}
+  .quote{font-size:13px;margin-bottom:8px}
+  .stats{grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px}
+  .stats div{padding:5px 8px;border-radius:10px}
+  .stats span{font-size:10px}
+  .stats b{font-size:18px}
+  #complete .panel{display:grid;grid-template-columns:1fr 1fr;gap:0 10px;min-width:min(520px,92vw)}
+  #complete .panel>:not(button){grid-column:1/-1;justify-self:center}
+  #complete .panel>.stats{justify-self:stretch}
+  #complete .big-btn,#complete .big-btn.ghost{margin-top:0;justify-content:center}
 }
